@@ -4,7 +4,7 @@ import { Text, View } from 'react-native'
 export const App = () => {
   return (
     <View>
-      <Text>Hola</Text>
+      <Text>Hola aaa</Text>
     </View>
   )
 }
