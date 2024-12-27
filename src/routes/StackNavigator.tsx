@@ -6,8 +6,10 @@ const Stack = createStackNavigator();
 export const StackNavigation = () => {
   return (
     <Stack.Navigator>
-      <Stack.Screen name="Login" component={Login}  options={{ headerShown: false }} />
-      <Stack.Screen name="HomeScreen" component={HomeScreen}  options={{ headerShown: false }} />
+      <Stack.Screen name="Login" component={Login}  //options={{ headerShown: false }} 
+      />
+      <Stack.Screen name="HomeScreen" component={HomeScreen} //options={{ headerShown: false }} 
+      />
     </Stack.Navigator>
   );
 }

@@ -1,11 +1,16 @@
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
-import { View, Text, TextInput, StyleSheet, Pressable } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable, Image, Dimensions } from 'react-native';
+
+const { width, height } = Dimensions.get('window'); 
 
 export const Login = () => {
   const navigation = useNavigation();
   return (
     <View style={styles.container}>
+      <Image
+        source={require('../../assets/fondo.jpg') } style={styles.backgroundImage}
+      />
       <Text style={styles.text}>Login</Text>
       <TextInput style={styles.email} placeholder="Email" />
       <TextInput style={styles.password} placeholder="Contraseña" />
@@ -29,6 +34,7 @@ const styles = StyleSheet.create({
     fontSize: 50,
     fontWeight: 'bold',
     marginTop: 100,
+    color: 'white'
   },
   email: {
     fontSize: 20,
@@ -54,5 +60,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     width: '100%',
     margin: 10
-  }
+  },
+  backgroundImage:{
+      position: 'absolute',
+      width: width,
+      height: height
+    },
 });
+
