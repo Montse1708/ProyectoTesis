@@ -1,3 +1,4 @@
+import { BlurView } from '@react-native-community/blur';
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { View, Text, TextInput, StyleSheet, Pressable, Image, Dimensions } from 'react-native';
@@ -12,10 +13,28 @@ export const Login = () => {
         source={require('../../assets/images/fondo2.jpeg') } style={styles.backgroundImage}
       />
       <View style={styles.containerBackground}></View>
+      
       <View style={styles.formContainer} >
         <Text style={styles.text}>Login</Text>
-        <TextInput style={styles.email} placeholder="Email" />
-        <TextInput style={styles.password} placeholder="Contraseña" />
+        <View style={styles.inputContainer}>
+          <Image 
+            source={require('../../assets/images/user.png')}
+            style={styles.icon} 
+          />
+          <TextInput style={styles.email}
+            placeholder="Email" 
+          />
+        </View>
+        <View style={styles.inputContainer}>
+          <Image 
+            source={require('../../assets/images/password.png')}
+            style={styles.icon} 
+          />
+          <TextInput style={styles.email}
+            placeholder="Contraseña" 
+            secureTextEntry
+          />
+        </View>
         <Pressable onPress={() => navigation.navigate('HomeScreen' as never)}>
           <Text style={styles.button}>Iniciar sesión</Text>
         </Pressable>
@@ -72,13 +91,6 @@ const styles = StyleSheet.create({
   },
   email: {
     fontSize: 20,
-    padding: 10,
-    backgroundColor: '#f3ebdf',
-    borderRadius: 10,
-    marginTop: 40,
-    width: '80%', // Asegura que el campo ocupe todo el ancho disponible
-    textAlign: 'left', // Alineación del texto a la izquierda
-    fontFamily: 'Poppins'
   },
   password: {
     fontSize: 20,
@@ -87,13 +99,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginTop: 20,
     width: '80%', // Asegura que el campo ocupe todo el ancho disponible
-    textAlign: 'left', // Alineación del texto a la izquierda
-    shadowColor: '#253547', 
-    shadowOffset: { width: 0, height: 20 }, // Desplazamiento de la sombra
-    shadowOpacity: 0.8, // Opacidad de la sombra
-    shadowRadius: 4, // Radio de la sombra
-    // Sombra para Android
-    elevation: 5, // Elevación para Android
+    textAlign: 'left', 
   },
   button: {
     fontSize: 20,
@@ -105,5 +111,28 @@ const styles = StyleSheet.create({
     width: width * 0.75,
     textAlign: 'center',
   },
+  blurView: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    width: '100%',
+    height: height * 0.58, // Adjust the height as needed
+    zIndex: 3,
+    borderTopLeftRadius: 100
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f3ebdf',
+    borderRadius: 10,
+    marginTop: 20,
+    width: '80%',
+    paddingLeft: 15, // Espacio extra para alinear el icono
+  },
+  icon: {
+    width: 30,
+    height: 30,
+    marginRight: 10, // Espacio entre el icono y el texto
+  }
 });
 
