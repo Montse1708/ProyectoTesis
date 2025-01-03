@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#e8ba61',
     marginTop: 80,
-    fontFamily: 'Poppins',
+    fontFamily: 'Popping-Regular'
   },
   email: {
     fontSize: 20,
