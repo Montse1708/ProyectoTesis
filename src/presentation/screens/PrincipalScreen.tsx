@@ -88,8 +88,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logo: {
-    width: '100%',
-    height: '100%',
+    width: 350,
+    height: 350,
     resizeMode: 'contain',
   },
   blurContainer: {
