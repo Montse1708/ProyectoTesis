@@ -2,6 +2,7 @@ import { BlurView } from '@react-native-community/blur';
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { Dimensions, Image, Pressable, StyleSheet, Text, View, Animated } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 
@@ -27,11 +28,17 @@ export const PrincipalScreen = () => {
 
   return (
     <View style={styles.container}>
+      {/* Imagen de fondo */}
       <Image
         source={require('../../assets/images/fondo2.jpeg')}
         style={styles.backgroundImage}
       />
-      <View style={styles.containerBackground}></View>
+
+      {/* Capa con el degradado encima de la imagen */}
+      <LinearGradient
+         colors={['rgba(29, 74, 59, 0.7)', 'rgba(37, 53, 71, 0.7)']} // Degradado de color
+        style={styles.gradientLayer}
+      />
 
       <Animated.View style={[styles.logoContainer, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
         <Image
@@ -59,7 +66,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     alignItems: 'center',
     paddingHorizontal: 20,
-    backgroundColor: '#fff',
     position: 'relative',
   },
   backgroundImage: {
@@ -71,12 +77,12 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
     zIndex: 0,
   },
-  containerBackground: {
-    backgroundColor: 'rgba(37, 53, 71, 0.82)',
+  gradientLayer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
     width: width,
     height: height,
-    position: 'absolute',
-    top: 1,
     zIndex: 1,
   },
   logoContainer: {
@@ -99,7 +105,7 @@ const styles = StyleSheet.create({
     height: height * 0.25,
     zIndex: 3,
     alignSelf: 'center',
-    borderColor: 'rgb(243,235,223)',
+    borderColor: 'rgba(37, 53, 71, 0.68)',
     borderWidth: 3,
     borderRadius: 10,
     overflow: 'hidden',
@@ -115,7 +121,7 @@ const styles = StyleSheet.create({
     zIndex: 4,
     paddingVertical: 12,
     paddingHorizontal: 30,
-    backgroundColor: 'rgb(232, 187, 97)', // Mismo color de fondo para el botón de login
+    backgroundColor: 'rgb(232, 187, 97)',
     borderRadius: 25,
     width: '80%',
     alignItems: 'center',
@@ -130,7 +136,7 @@ const styles = StyleSheet.create({
     zIndex: 4,
     paddingVertical: 12,
     paddingHorizontal: 30,
-    backgroundColor: 'rgba(37, 53, 71, 0.68)', // Mismo color de fondo para el botón de registro
+    backgroundColor: 'rgba(37, 53, 71, 0.68)',
     borderRadius: 25,
     width: '80%',
     alignItems: 'center',
