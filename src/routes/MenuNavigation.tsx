@@ -1,14 +1,12 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { HomeScreen } from '../presentation/screens/HomeScreen';
-import Ionicons from 'react-native-vector-icons/Ionicons'; 
-import { Image, View } from 'react-native';
-import { StyleSheet } from 'react-native';
+import { Image, View, Animated, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
 
 const Tab = createBottomTabNavigator();
 
 export const MenuNavigation = () => {
   return (
-    
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
@@ -34,54 +32,74 @@ export const MenuNavigation = () => {
   );
 };
 
-
 const menuIcons = (route: any, focused: boolean) => {
+  // Usamos useRef para crear las animaciones
+  const scale = useRef(new Animated.Value(1)).current; // Inicializa la escala en 1
+  const translateY = useRef(new Animated.Value(0)).current; // Inicializa el desplazamiento en Y en 0
+
+  useEffect(() => {
+    // Inicia la animación de escala y desplazamiento cuando la pestaña cambia
+    Animated.parallel([
+      Animated.timing(scale, {
+        toValue: focused ? 1.2 : 1, // Escala al 1.2 si está enfocado, al 1 si no lo está
+        duration: 200, // Duración de la animación
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: focused ? -20 : 0, // Desplaza hacia arriba cuando está enfocado
+        duration: 200, // Duración de la animación
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [focused, scale, translateY]); // Añadir dependencias para animaciones
+
   let icon;
   if (route.name === 'HomeScreen') {
     icon = focused ? (
-      <View style={styles.circleStyle}>
+      <Animated.View
+        style={[styles.circleStyle, { transform: [{ scale }, { translateY }] }]}>
         <Image
           source={require('../assets/images/home-active.png')}
           style={styles.iconStyle}
         />
-      </View>
-    ) :  <Image
-      source={require('../assets/images/home.png')} 
-      style={{ width: 30, height: 30 }}
-    />;
-  }else{
+      </Animated.View>
+    ) : (
+        <Image
+          source={require('../assets/images/home.png')}
+          style={styles.iconStyle}
+        />
+    );
+  } else {
     icon = focused ? (
-      <View style={styles.circleStyle}>
+      <Animated.View
+        style={[styles.circleStyle, { transform: [{ scale }, { translateY }] }]}>
         <Image
           source={require('../assets/images/home-active.png')}
           style={styles.iconStyle}
         />
-      </View>
-    ) :  <Image
-      source={require('../assets/images/home.png')} 
-      style={{ width: 30, height: 30 }}
-    />;
+      </Animated.View>
+    ) : (
+        <Image
+          source={require('../assets/images/home.png')}
+          style={styles.iconStyle}
+        />
+    );
   }
 
-  // Devuelve el ícono de Ionicons
-  return (
-    <View>
-      {icon}
-    </View>
-  )
+  return <View>{icon}</View>;
 };
 
 const styles = StyleSheet.create({
   circleStyle: {
-      width: 50,
-      height: 50,
-      borderRadius: 25, // Esto hace que el contenedor sea un círculo
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: '#e8ba61', // Fondo rojo cuando está activo
+    width: 50,
+    height: 50,
+    borderRadius: 25, // Esto hace que el contenedor sea un círculo
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#e8ba61', // Fondo cuando está activo
   },
-  iconStyle:{
-    width: 30, 
-    height: 30
-  }
+  iconStyle: {
+    width: 30,
+    height: 30,
+  },
 });
