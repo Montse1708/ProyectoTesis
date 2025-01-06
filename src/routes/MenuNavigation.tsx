@@ -15,7 +15,7 @@ export const MenuNavigation = () => {
         tabBarStyle: {
           marginBottom: 20,
           borderRadius: 50,
-          backgroundColor: 'rgba(37, 53, 71, 0.8)',
+          backgroundColor: 'rgba(37, 53, 71, 1)',
           alignSelf: 'center',
           width: '95%',
           height: 70,

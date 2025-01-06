@@ -1,9 +1,9 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import React from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TextInput, Image } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient'; // Importa LinearGradient
 
 const { width } = Dimensions.get('window'); // Ancho de la pantalla
 const { height } = Dimensions.get('window'); // Altura de la pantalla
@@ -19,11 +19,29 @@ export const HomeScreen = () => {
   const categorias = [
     { id: 1, title: 'Sumas', color: '#FF6347' },
     { id: 2, title: 'Resta', color: '#4682B4' },
+    { id: 3, title: 'Sumas', color: '#FF6347' },
+    { id: 4, title: 'Resta', color: '#4682B4' },
   ];
 
   return (
     <View style={styles.container}>
+      {/* Degradado solo en la parte superior */}
+      <LinearGradient
+      colors={['rgb(37, 53, 71)','rgba(29, 74, 59, 0.72)']}
+      start={{ x: 0, y: 0 }} // Comienza en la parte superior izquierda
+      end={{ x: 1, y: 1 }} // Termina en la parte inferior derecha
+      style={styles.gradient}
+    >
       <Text style={styles.header}>DysMathAI</Text>
+      <View style={styles.buscarContainer}>
+        <Image
+                    source={require('../../assets/images/search.png')}
+                    style={styles.icon}
+                  />
+        <TextInput style={styles.buscar} placeholder="Buscar"/>
+      </View>
+    </LinearGradient>
+
 
       {/* Carrusel */}
       <Carousel
@@ -34,7 +52,7 @@ export const HomeScreen = () => {
         data={data}
         scrollAnimationDuration={1000}
         renderItem={({ item }) => (
-          <View style={[styles.card, { backgroundColor: item.color }]}>
+          <View style={[styles.card, { backgroundColor: item.color }]} >
             <Text style={styles.cardText}>{item.title}</Text>
           </View>
         )}
@@ -42,13 +60,15 @@ export const HomeScreen = () => {
       />
 
       {/* Categorías */}
-      <Text style={styles.categoriesHeader}>Categorías</Text>
-      <View style={styles.categoriesContainer}>
-        {categorias.map((categoria) => (
-          <TouchableOpacity key={categoria.id} style={[styles.card, { backgroundColor: categoria.color }]}>
-            <Text style={styles.cardText}>{categoria.title}</Text>
-          </TouchableOpacity>
-        ))}
+      <View style={styles.categoriesSection}>
+        <Text style={styles.categoriesHeader}>Categorías</Text>
+        <View style={styles.categoriesContainer}>
+          {categorias.map((categoria) => (
+            <TouchableOpacity key={categoria.id} style={[styles.card, { backgroundColor: categoria.color }]} >
+              <Text style={styles.cardText}>{categoria.title}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
     </View>
   );
@@ -58,19 +78,31 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    justifyContent: 'center',
+    justifyContent: 'flex-start', // Asegura que los elementos se alineen desde la parte superior
     alignItems: 'center',
     height: height,
+    paddingTop: 20, // Ajuste para que el contenido no quede pegado al borde superior
+  },
+  gradient: {
+    width: '100%',
+    height: 250, // Solo la parte superior tendrá el degradado
+    position: 'absolute', // Lo coloca sobre la parte superior de la pantalla
+    top: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
   },
   header: {
-    fontSize: 24,
+    fontSize: 35,
     fontWeight: 'bold',
-    marginBottom: 20,
+    color: '#fff',
     fontFamily: 'Poppins',
-    marginTop: 20,
+    marginTop: '20%',
   },
   carousel: {
-    alignSelf: 'center', // Centra el carrusel horizontalmente
+    alignSelf: 'center',
+    marginTop: 150, // Deja espacio para el encabezado y el degradado
   },
   card: {
     width: '100%', // Las tarjetas ocupan todo el ancho del carrusel
@@ -84,17 +116,39 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
+  categoriesSection: {
+    marginTop: 10, // Añade espacio entre el carrusel y las categorías
+    width: '100%',
+    alignItems: 'center',
+  },
   categoriesHeader: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginTop: 30,
-    marginBottom: 15,
   },
   categoriesContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '50%',
-    height: '10%',
-    paddingHorizontal: 10,
+    justifyContent: 'flex-start', // Alinea los elementos a la izquierda
+    width: '40%', // Asegura que ocupe el 100% del ancho
+  },
+  buscar: {
+    fontSize: 20,
+    paddingLeft: 15, // Espacio para el texto
+    flex: 1, // Hace que el input ocupe el espacio disponible
+  },
+  buscarContainer: {
+    marginBottom: '35%',
+    backgroundColor: '#f3ebdf',
+    borderRadius: 50,
+    marginTop: 20,
+    width: '90%',
+    height: 50, // Ajusta la altura del contenedor
+    paddingLeft: 15,
+    flexDirection: 'row', // Coloca el ícono y el input en fila
+    alignItems: 'center', // Centra el ícono y el input verticalmente
+    zIndex: 1,
+  },
+  icon: {
+    width: 30,
+    height: 30,// Añade espacio entre el ícono y el TextInput
   },
 });
