@@ -4,7 +4,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TextInput, Image } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
 import LinearGradient from 'react-native-linear-gradient'; // Importa LinearGradient
-
+import { ScrollView } from 'react-native-gesture-handler';
 const { width } = Dimensions.get('window'); // Ancho de la pantalla
 const { height } = Dimensions.get('window'); // Altura de la pantalla
 
@@ -60,16 +60,21 @@ export const HomeScreen = () => {
       />
 
       {/* Categorías */}
-      <View style={styles.categoriesSection}>
         <Text style={styles.categoriesHeader}>Categorías</Text>
         <View style={styles.categoriesContainer}>
-          {categorias.map((categoria) => (
-            <TouchableOpacity key={categoria.id} style={[styles.card, { backgroundColor: categoria.color }]} >
-              <Text style={styles.cardText}>{categoria.title}</Text>
-            </TouchableOpacity>
-          ))}
+          <ScrollView 
+          contentContainerStyle={{paddingHorizontal: 20}}
+          horizontal showsHorizontalScrollIndicator={false}
+          >
+            {
+              categorias.map((categoria)=> (
+                <View key={categoria.id} style={[styles.cardCategories, { backgroundColor: categoria.color }]}>
+                  <Text style={styles.cardTextCategories}>{categoria.title}</Text>
+                </View>
+              )) 
+            }
+          </ScrollView>
         </View>
-      </View>
     </View>
   );
 };
@@ -116,11 +121,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
-  categoriesSection: {
-    marginTop: 10, // Añade espacio entre el carrusel y las categorías
-    width: '100%',
-    alignItems: 'center',
-  },
   categoriesHeader: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -128,7 +128,22 @@ const styles = StyleSheet.create({
   categoriesContainer: {
     flexDirection: 'row',
     justifyContent: 'flex-start', // Alinea los elementos a la izquierda
-    width: '40%', // Asegura que ocupe el 100% del ancho
+    width: '100%', // Asegura que ocupe el 100% del ancho
+    marginBottom: '60%',
+  },
+  cardCategories: {
+    width: width * 0.3, // El ancho de cada tarjeta es un 30% del ancho de la pantalla
+    height: 100, // Altura de las tarjetas
+    marginRight: 10, // Espacio entre tarjetas
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    marginTop: 20,
+  },
+  cardTextCategories: {
+    fontSize: 18,
+    color: '#fff',
+    fontWeight: 'bold',
   },
   buscar: {
     fontSize: 20,
