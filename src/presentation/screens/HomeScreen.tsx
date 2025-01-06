@@ -17,10 +17,10 @@ export const HomeScreen = () => {
   ];
 
   const categorias = [
-    { id: 1, title: 'Sumas', color: '#FF6347' },
+    { id: 1, title: 'Suma', color: '#FF6347' },
     { id: 2, title: 'Resta', color: '#4682B4' },
-    { id: 3, title: 'Sumas', color: '#FF6347' },
-    { id: 4, title: 'Resta', color: '#4682B4' },
+    { id: 3, title: 'Multiplicación', color: '#FF6347' },
+    { id: 4, title: 'División', color: '#4682B4' },
   ];
 
   return (
@@ -62,18 +62,25 @@ export const HomeScreen = () => {
       {/* Categorías */}
         <Text style={styles.categoriesHeader}>Categorías</Text>
         <View style={styles.categoriesContainer}>
-          <ScrollView 
-          contentContainerStyle={{paddingHorizontal: 20}}
-          horizontal showsHorizontalScrollIndicator={false}
-          >
-            {
-              categorias.map((categoria)=> (
-                <View key={categoria.id} style={[styles.cardCategories, { backgroundColor: categoria.color }]}>
-                  <Text style={styles.cardTextCategories}>{categoria.title}</Text>
-                </View>
-              )) 
-            }
-          </ScrollView>
+        <ScrollView 
+      contentContainerStyle={{ paddingHorizontal: 20 }}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+    >
+      {
+        categorias.map((categoria) => (
+          <View key={categoria.id} style={[styles.cardCategories, { backgroundColor: categoria.color }]}>
+            {/* Círculo */}
+            <View style={styles.circle} />
+            <Image
+                    source={require('../../assets/images/suma.png')}
+                    style={styles.iconCategory}
+                  />
+            <Text style={styles.cardTextCategories}>{categoria.title}</Text>
+          </View>
+        ))
+      }
+    </ScrollView>
         </View>
     </View>
   );
@@ -129,21 +136,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-start', // Alinea los elementos a la izquierda
     width: '100%', // Asegura que ocupe el 100% del ancho
-    marginBottom: '60%',
+    marginBottom: '55%',
   },
   cardCategories: {
     width: width * 0.3, // El ancho de cada tarjeta es un 30% del ancho de la pantalla
-    height: 100, // Altura de las tarjetas
+    height: 120, // Altura de las tarjetas
     marginRight: 10, // Espacio entre tarjetas
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 10,
-    marginTop: 20,
+    marginTop: 30,
   },
   cardTextCategories: {
     fontSize: 18,
     color: '#fff',
     fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  circle: {
+    width: 100, // Ancho del círculo (más grande)
+    height: 100, // Altura del círculo (más grande)
+    borderRadius: 50, // La mitad del ancho/alto para mantener la forma circular
+    backgroundColor: '#fff', // Color del círculo
+    position: 'absolute', // Posiciona el círculo sobre la tarjeta
+    top: -20, // Coloca el círculo por encima de la tarjeta
+    alignSelf: 'center', // Centra el círculo horizontalmente en la tarjeta
+    borderWidth: 2, // Borde opcional para destacar el círculo
+    borderColor: '	#f3ebdf', // Color del borde
   },
   buscar: {
     fontSize: 20,
@@ -165,5 +184,10 @@ const styles = StyleSheet.create({
   icon: {
     width: 30,
     height: 30,// Añade espacio entre el ícono y el TextInput
+  },
+  iconCategory: {
+    width: '70%',
+    height: '70%',// Añade espacio entre el ícono y el TextInput
+    marginBottom: 10,
   },
 });
