@@ -1,3 +1,6 @@
 module.exports = {
-  assets: ['./src/assets/fonts'], // Ruta donde están tus fuentes
+  assets: [
+    './assets/fonts', 
+    './node_modules/react-native-vector-icons/Fonts'
+  ],
 };

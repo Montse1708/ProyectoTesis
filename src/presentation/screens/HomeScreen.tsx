@@ -34,7 +34,6 @@ export const HomeScreen = () => {
         style={styles.carousel}
       />
       <View>
-      <Ionicons name="home" size={50} color="#000" />
     </View>
     </View>
   );
