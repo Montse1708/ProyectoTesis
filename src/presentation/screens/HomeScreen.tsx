@@ -1,8 +1,12 @@
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { NavigationContainer } from '@react-navigation/native';
 import React from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const { width } = Dimensions.get('window'); // Ancho de la pantalla
+const { height } = Dimensions.get('window')
 
 export const HomeScreen = () => {
   const data = [
@@ -29,6 +33,9 @@ export const HomeScreen = () => {
         )}
         style={styles.carousel}
       />
+      <View>
+      <Ionicons name="home" size={50} color="#000" />
+    </View>
     </View>
   );
 };
@@ -39,6 +46,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
+    height: height,
   },
   header: {
     fontSize: 24,
