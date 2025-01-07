@@ -17,10 +17,10 @@ export const HomeScreen = () => {
   ];
 
   const categorias = [
-    { id: 1, title: 'Suma', color: '#FF6347' },
-    { id: 2, title: 'Resta', color: '#4682B4' },
-    { id: 3, title: 'Multiplicación', color: '#FF6347' },
-    { id: 4, title: 'División', color: '#4682B4' },
+    { id: 1, title: 'Suma', color: 'rgba(37, 53, 71, 0.8)', image: <Image source={require('../../assets/images/suma.png')} style={styles.iconSuma}/>},
+    { id: 2, title: 'Resta', color: 'rgba(29, 74, 59, 0.72)', image: <Image source={require('../../assets/images/resta.png')} style={styles.iconCategory}/> },
+    { id: 3, title: 'Multiplicación', color: 'rgb(232,186,97)', image: <Image source={require('../../assets/images/multiplicación.png')} style={styles.iconCategory}/> },
+    { id: 4, title: 'División', color: 'rgba(37, 53, 71, 0.65)', image: <Image source={require('../../assets/images/división.png')} style={styles.iconDivision}/> },
   ];
 
   return (
@@ -72,10 +72,7 @@ export const HomeScreen = () => {
           <View key={categoria.id} style={[styles.cardCategories, { backgroundColor: categoria.color }]}>
             {/* Círculo */}
             <View style={styles.circle} />
-            <Image
-                    source={require('../../assets/images/suma.png')}
-                    style={styles.iconCategory}
-                  />
+            {categoria.image}
             <Text style={styles.cardTextCategories}>{categoria.title}</Text>
           </View>
         ))
@@ -161,8 +158,8 @@ const styles = StyleSheet.create({
     position: 'absolute', // Posiciona el círculo sobre la tarjeta
     top: -20, // Coloca el círculo por encima de la tarjeta
     alignSelf: 'center', // Centra el círculo horizontalmente en la tarjeta
-    borderWidth: 2, // Borde opcional para destacar el círculo
-    borderColor: '	#f3ebdf', // Color del borde
+    borderWidth: 3, // Borde opcional para destacar el círculo
+    borderColor: '#f3ebdf', // Color del borde
   },
   buscar: {
     fontSize: 20,
@@ -189,5 +186,15 @@ const styles = StyleSheet.create({
     width: '70%',
     height: '70%',// Añade espacio entre el ícono y el TextInput
     marginBottom: 10,
+  },
+  iconSuma: {
+    width: '40%',
+    height: '60%',
+    padding: 45,
+  },
+  iconDivision: {
+    width: '60%',
+    height: '60%',
+    marginBottom: 20,
   },
 });
