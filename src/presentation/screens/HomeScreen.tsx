@@ -59,6 +59,22 @@ export const HomeScreen = () => {
         style={styles.carousel}
       />
 
+        <ScrollView style={styles.categoryMenu}
+          contentContainerStyle={{ paddingHorizontal: 20 }}
+          horizontal
+          showsHorizontalScrollIndicator={false} 
+          >
+          {
+            categorias.map((categoria) => (
+              <TouchableOpacity style={styles.categoryMenu}>
+                <Text style={styles.menuText}>
+                  {categoria.title}
+                </Text>
+              </TouchableOpacity>
+            ))
+          }
+        </ScrollView>
+
       {/* Categorías */}
         <Text style={styles.categoriesHeader}>Categorías</Text>
         <View style={styles.categoriesContainer}>
@@ -133,7 +149,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-start', // Alinea los elementos a la izquierda
     width: '100%', // Asegura que ocupe el 100% del ancho
-    marginBottom: '55%',
+    marginBottom: '35%',
   },
   cardCategories: {
     width: width * 0.3, // El ancho de cada tarjeta es un 30% del ancho de la pantalla
@@ -197,4 +213,14 @@ const styles = StyleSheet.create({
     height: '60%',
     marginBottom: 20,
   },
+  categoryMenu: {
+    marginTop: '38%',
+    marginHorizontal: 25,
+  },
+  menuText:{
+    fontWeight: 'bold',
+    fontSize: 15,
+    textAlign: 'left',
+    marginLeft: -10,
+  }
 });
