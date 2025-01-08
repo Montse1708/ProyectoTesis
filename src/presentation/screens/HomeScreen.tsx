@@ -67,9 +67,11 @@ export const HomeScreen = () => {
           {
             categorias.map((categoria) => (
               <TouchableOpacity style={styles.categoryMenu}>
+                <View style={styles.menuCircle}>
                 <Text style={styles.menuText}>
-                  {categoria.title}
+                    {categoria.title}
                 </Text>
+                </View>
               </TouchableOpacity>
             ))
           }
@@ -214,13 +216,20 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   categoryMenu: {
-    marginTop: '38%',
-    marginHorizontal: 25,
+    marginTop: '35%',
+    marginHorizontal: 15,
   },
   menuText:{
     fontWeight: 'bold',
     fontSize: 15,
-    textAlign: 'left',
-    marginLeft: -10,
+    textAlign: 'center',
+    alignItems: 'center',
+    paddingTop: 15,
+  },
+  menuCircle: {
+    width: 120, 
+    height: 50, 
+    backgroundColor: '#ff5', // Color del círculo
+    borderRadius: 20,
   }
 });
