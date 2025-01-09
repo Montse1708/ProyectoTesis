@@ -1,6 +1,6 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TextInput, Image } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
 import LinearGradient from 'react-native-linear-gradient'; // Importa LinearGradient
@@ -22,6 +22,8 @@ export const HomeScreen = () => {
     { id: 3, title: 'Multiplicación', color: 'rgb(232,186,97)', image: <Image source={require('../../assets/images/multiplicación.png')} style={styles.iconCategory}/> },
     { id: 4, title: 'División', color: 'rgba(37, 53, 71, 0.65)', image: <Image source={require('../../assets/images/división.png')} style={styles.iconDivision}/> },
   ];
+
+  const [activeCategory, setActiveCategory] = useState(Number);
 
   return (
     <View style={styles.container}>
@@ -66,13 +68,16 @@ export const HomeScreen = () => {
           >
           {
             categorias.map((categoria) => (
-              <TouchableOpacity style={styles.categoryMenu}>
-                <View style={styles.menuCircle}>
-                <Text style={styles.menuText}>
-                    {categoria.title}
-                </Text>
-                </View>
-              </TouchableOpacity>
+              <TouchableOpacity
+              key={categoria.id}
+              style={[
+                styles.menuCircle,
+                { backgroundColor: activeCategory === categoria.id ? '#e8ba61' : '#f3ebdf' }, // Cambia el color dinámicamente
+              ]}
+              onPress={() => setActiveCategory(categoria.id)} // Actualiza la categoría activa
+            >
+              <Text style={styles.menuText}>{categoria.title}</Text>
+            </TouchableOpacity>
             ))
           }
         </ScrollView>
@@ -80,22 +85,30 @@ export const HomeScreen = () => {
       {/* Categorías */}
         <Text style={styles.categoriesHeader}>Categorías</Text>
         <View style={styles.categoriesContainer}>
-        <ScrollView 
-      contentContainerStyle={{ paddingHorizontal: 20 }}
-      horizontal
-      showsHorizontalScrollIndicator={false}
-    >
-      {
-        categorias.map((categoria) => (
-          <View key={categoria.id} style={[styles.cardCategories, { backgroundColor: categoria.color }]}>
-            {/* Círculo */}
-            <View style={styles.circle} />
-            {categoria.image}
-            <Text style={styles.cardTextCategories}>{categoria.title}</Text>
-          </View>
-        ))
-      }
-    </ScrollView>
+        <View style={styles.categoriesContainer}>
+        {/* Primera fila: 3 tarjetas */}
+        <View style={styles.row}>
+          {categorias.slice(0, 3).map((categoria) => (
+            <View key={categoria.id} style={[styles.cardCategories, { backgroundColor: categoria.color }]}>
+              <View style={styles.circle} />
+              {categoria.image}
+              <Text style={styles.cardTextCategories}>{categoria.title}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Segunda fila: 2 tarjetas */}
+        <View style={styles.row}>
+          {categorias.slice(3, 5).map((categoria) => (
+            <View key={categoria.id} style={[styles.cardCategories, { backgroundColor: categoria.color }]}>
+              <View style={styles.circle} />
+              {categoria.image}
+              <Text style={styles.cardTextCategories}>{categoria.title}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
         </View>
     </View>
   );
@@ -146,22 +159,27 @@ const styles = StyleSheet.create({
   categoriesHeader: {
     fontSize: 20,
     fontWeight: 'bold',
+    paddingBottom: 30
   },
   categoriesContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start', // Alinea los elementos a la izquierda
-    width: '100%', // Asegura que ocupe el 100% del ancho
-    marginBottom: '35%',
+    flexDirection: 'column', // Organiza las filas en columna
+    alignItems: 'center', // Centra las filas horizontalmente
+    width: '100%', // Asegura que el contenedor ocupe todo el ancho
+    marginBottom: 15,
+  },
+  row: {
+    flexDirection: 'row', // Las tarjetas de cada fila se colocan en fila
+    justifyContent: 'space-between', // Espacia las tarjetas uniformemente
+    width: '90%', // Ancho de la fila
+    marginBottom: 20, // Espacio entre filas
   },
   cardCategories: {
-    width: width * 0.3, // El ancho de cada tarjeta es un 30% del ancho de la pantalla
+    width: '30%', // Cada tarjeta ocupa el 30% del ancho (ideal para 3 tarjetas por fila)
     height: 120, // Altura de las tarjetas
-    marginRight: 10, // Espacio entre tarjetas
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 10,
-    marginTop: 30,
-  },
+  },  
   cardTextCategories: {
     fontSize: 18,
     color: '#fff',
@@ -216,8 +234,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   categoryMenu: {
-    marginTop: '35%',
+    marginTop: '70%',
     marginHorizontal: 15,
+    marginLeft: 5,
+    marginRight: 25,
   },
   menuText:{
     fontWeight: 'bold',
@@ -229,7 +249,8 @@ const styles = StyleSheet.create({
   menuCircle: {
     width: 120, 
     height: 50, 
-    backgroundColor: '#ff5', // Color del círculo
+    backgroundColor: '#f3ebdf', // Color del círculo
     borderRadius: 20,
+    marginLeft: 20,
   }
 });
