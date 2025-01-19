@@ -1,10 +1,9 @@
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { NavigationContainer } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TextInput, Image } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TextInput, Image, Pressable } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
 import LinearGradient from 'react-native-linear-gradient'; // Importa LinearGradient
 import { ScrollView } from 'react-native-gesture-handler';
+import { useNavigation } from '@react-navigation/native';
 const { width } = Dimensions.get('window'); // Ancho de la pantalla
 const { height } = Dimensions.get('window'); // Altura de la pantalla
 
@@ -24,7 +23,7 @@ export const HomeScreen = () => {
   ];
 
   const [activeCategory, setActiveCategory] = useState(Number);
-
+  const navigation = useNavigation();
   return (
     <View style={styles.container}>
       {/* Degradado solo en la parte superior */}
@@ -89,11 +88,18 @@ export const HomeScreen = () => {
         {/* Primera fila: 3 tarjetas */}
         <View style={styles.row}>
           {categorias.slice(0, 3).map((categoria) => (
-            <View key={categoria.id} style={[styles.cardCategories, { backgroundColor: categoria.color }]}>
+            <Pressable key={categoria.id}  style={[styles.cardCategories, { backgroundColor: categoria.color }]}
+            onPress={() => {
+              // Navega según la categoría
+              if (categoria.title === 'Suma') {
+                navigation.navigate('Addition' as never);// Navega a la pantalla de Suma
+              } 
+            }}
+          >
               <View style={styles.circle} />
               {categoria.image}
               <Text style={styles.cardTextCategories}>{categoria.title}</Text>
-            </View>
+            </Pressable>
           ))}
         </View>
 
