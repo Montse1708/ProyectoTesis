@@ -4,97 +4,137 @@ import '@tensorflow/tfjs-react-native';
 import { Button, TextInput, View, Text, StyleSheet } from 'react-native';
 
 export const Addition = () => {
+  const [isModelReady, setIsModelReady] = useState(false);
+  const [number1, setNumber1] = useState<number | null>(null);
+  const [number2, setNumber2] = useState<number | null>(null);
+  const [userAnswer, setUserAnswer] = useState<string>('');
+  const [feedback, setFeedback] = useState<string>('');
   const [model, setModel] = useState<tf.LayersModel | null>(null);
-  const [num1, setNum1] = useState(0);
-  const [num2, setNum2] = useState(0);
-  const [respuestaUsuario, setRespuestaUsuario] = useState('');
-  const [mensaje, setMensaje] = useState('');
-  const [modeloListo, setModeloListo] = useState(false);
 
   useEffect(() => {
-    const cargarModelo = async () => {
-      await tf.ready();
-      await tf.setBackend('cpu');
-      console.log('TensorFlow.js está listo con el backend:', tf.getBackend());
+    const initializeModel = async () => {
+      try {
+        console.log('Initializing TensorFlow...');
+        await tf.ready();
+        console.log('TensorFlow is ready!');
 
-      // Crear modelo secuencial
-      const newModel = tf.sequential();
-      newModel.add(tf.layers.dense({ units: 16, activation: 'relu', inputShape: [2] }));
-      newModel.add(tf.layers.dense({ units: 1 }));
+        // Elimina variables previas para evitar errores
+        tf.disposeVariables();
 
-      newModel.compile({ optimizer: 'sgd', loss: 'meanSquaredError' });
-
-      // Datos de entrenamiento
-      const inputs = tf.tensor2d([
-        [1, 2], [3, 4], [5, 6], [7, 8], [9, 1], 
-        [2, 3], [4, 5], [6, 7], [8, 9], [1, 10]
-      ]);
-      const labels = tf.tensor2d([
-        [3], [7], [11], [15], [10],
-        [5], [9], [13], [17], [11]
-      ]);
-
-      // Entrenar modelo
-      await newModel.fit(inputs, labels, { epochs: 1000 });
-
-      // Liberar memoria de tensores
-      inputs.dispose();
-      labels.dispose();
-
-      console.log('Modelo entrenado correctamente');
-      setModel(newModel);
-      setModeloListo(true);
+        // Crea y entrena el modelo
+        const trainedModel = await createAndTrainModel();
+        setModel(trainedModel);
+        setIsModelReady(true);
+        console.log('Model is ready!');
+      } catch (error) {
+        console.error('Error initializing TensorFlow or model:', error);
+      }
     };
 
-    cargarModelo();
+    initializeModel();
+
+    // Limpieza cuando el componente se desmonta
+    return () => {
+      if (model) {
+        model.dispose();
+        console.log('Model disposed.');
+      }
+    };
   }, []);
 
-  const generarPregunta = () => {
-    setNum1(Math.floor(Math.random() * 10));
-    setNum2(Math.floor(Math.random() * 10));
-    setRespuestaUsuario('');
-    setMensaje('');
+  const createAndTrainModel = async (): Promise<tf.LayersModel> => {
+    const model = tf.sequential();
+    model.add(tf.layers.dense({ units: 8, activation: 'relu', inputShape: [2] }));
+    model.add(tf.layers.dense({ units: 1 }));
+
+    model.compile({
+      optimizer: tf.train.sgd(0.1),
+      loss: 'meanSquaredError',
+    });
+
+    const inputs = tf.tensor2d([
+      [1, 2],
+      [3, 4],
+      [5, 6],
+      [7, 8],
+    ]);
+    const outputs = tf.tensor2d([
+      [3],
+      [7],
+      [11],
+      [15],
+    ]);
+
+    console.log('Training model...');
+    await model.fit(inputs, outputs, {
+      epochs: 10,
+      callbacks: {
+        onEpochEnd: (epoch, logs) => {
+          console.log(`Epoch ${epoch + 1}: Loss = ${logs?.loss}`);
+        },
+      },
+    });
+    console.log('Model trained!');
+
+    return model;
   };
 
-  const verificarRespuesta = async () => {
-    if (model) {
-      const input = tf.tensor2d([[num1, num2]]);
-      const prediction = model.predict(input) as tf.Tensor;
-      const resultado = prediction.dataSync()[0]; // Obtener valor
-      input.dispose(); // Liberar memoria
-      const respuestaCorrecta = Math.round(resultado);
+  const generateSum = () => {
+    if (!model) {
+      console.log('Model is not ready yet.');
+      return;
+    }
+    const num1 = Math.floor(Math.random() * 10);
+    const num2 = Math.floor(Math.random() * 10);
+    setNumber1(num1);
+    setNumber2(num2);
+    setFeedback('');
+    setUserAnswer('');
+  };
 
-      if (parseInt(respuestaUsuario, 10) === respuestaCorrecta) {
-        setMensaje('¡Correcto! 🎉');
-        generarPregunta();
+  const checkAnswer = async () => {
+    if (model && number1 !== null && number2 !== null) {
+      const inputTensor = tf.tensor2d([[number1, number2]]);
+      const predictedTensor = model.predict(inputTensor) as tf.Tensor;
+      const predictedValue = (await predictedTensor.data())[0];
+
+      inputTensor.dispose();
+      predictedTensor.dispose();
+
+      if (Math.abs(predictedValue - Number(userAnswer)) < 1) {
+        setFeedback('Correct! Great job!');
       } else {
-        setMensaje(`Incorrecto. La respuesta correcta era ${respuestaCorrecta}.`);
+        setFeedback(`Incorrect. The correct answer is ${Math.round(predictedValue)}.`);
       }
-    } else {
-      setMensaje('El modelo aún no está listo. Por favor, espera.');
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Prueba tus habilidades de suma</Text>
-      {!modeloListo ? (
-        <Text style={styles.message}>Entrenando modelo, por favor espera...</Text>
-      ) : (
+      {isModelReady ? (
         <>
-          <Text style={styles.question}>{`${num1} + ${num2}`}</Text>
+          <Text style={styles.header}>AI-Generated Addition</Text>
+          {number1 !== null && number2 !== null ? (
+            <Text style={styles.question}>
+              What is {number1} + {number2}?
+            </Text>
+          ) : (
+            <Text style={styles.prompt}>Press "Generate" to start!</Text>
+          )}
           <TextInput
             style={styles.input}
             keyboardType="numeric"
-            placeholder="Tu respuesta"
-            value={respuestaUsuario}
-            onChangeText={setRespuestaUsuario}
+            value={userAnswer}
+            onChangeText={(text) => setUserAnswer(text)}
+            placeholder="Enter your answer"
           />
-          <Button title="Verificar" onPress={verificarRespuesta} />
-          {mensaje && <Text style={styles.message}>{mensaje}</Text>}
+          <Button title="Check Answer" onPress={checkAnswer} />
+          <Text style={styles.feedback}>{feedback}</Text>
+          <Button title="Generate Sum" onPress={generateSum} />
         </>
+      ) : (
+        <Text>Loading model...</Text>
       )}
-      <Button title="Generar nueva pregunta" onPress={generarPregunta} />
     </View>
   );
 };
@@ -104,31 +144,33 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 16,
+    backgroundColor: '#f5f5f5',
   },
-  title: {
+  header: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   question: {
     fontSize: 20,
-    margin: 10,
+    marginBottom: 16,
+  },
+  prompt: {
+    fontSize: 18,
+    marginBottom: 16,
   },
   input: {
-    padding: 10,
-    fontSize: 16,
-    margin: 10,
-    width: '80%',
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 5,
+    borderRadius: 4,
+    padding: 8,
+    width: '80%',
+    marginBottom: 16,
+    fontSize: 16,
   },
-  message: {
-    marginTop: 20,
+  feedback: {
     fontSize: 18,
-    fontWeight: 'bold',
+    marginVertical: 16,
   },
 });
-
-export default Addition;
