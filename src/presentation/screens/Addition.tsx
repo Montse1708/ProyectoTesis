@@ -9,49 +9,33 @@ export const Addition = () => {
   const [number2, setNumber2] = useState<number | null>(null);
   const [userAnswer, setUserAnswer] = useState<string>('');
   const [feedback, setFeedback] = useState<string>('');
-  const [model, setModel] = useState<tf.LayersModel | null>(null);
+  const [model, setModel] = useState<tf.Sequential | null>(null);
 
+  // Initialize TensorFlow and the model
   useEffect(() => {
     const initializeModel = async () => {
-      try {
-        console.log('Initializing TensorFlow...');
-        await tf.ready();
-        console.log('TensorFlow is ready!');
+      console.log("TensorFlow is loading...");
+      await tf.ready();
+      console.log("TensorFlow is ready!");
 
-        // Elimina variables previas para evitar errores
-        tf.disposeVariables();
-
-        // Crea y entrena el modelo
-        const trainedModel = await createAndTrainModel();
-        setModel(trainedModel);
-        setIsModelReady(true);
-        console.log('Model is ready!');
-      } catch (error) {
-        console.error('Error initializing TensorFlow or model:', error);
-      }
+      const trainedModel = await createAdditionModel();
+      setModel(trainedModel);
+      setIsModelReady(true);
+      console.log("Model is ready!");
     };
 
     initializeModel();
-
-    // Limpieza cuando el componente se desmonta
-    return () => {
-      if (model) {
-        model.dispose();
-        console.log('Model disposed.');
-      }
-    };
   }, []);
 
-  const createAndTrainModel = async (): Promise<tf.LayersModel> => {
+  const createAdditionModel = async (): Promise<tf.Sequential> => {
     const model = tf.sequential();
     model.add(tf.layers.dense({ units: 8, activation: 'relu', inputShape: [2] }));
     model.add(tf.layers.dense({ units: 1 }));
-
-    model.compile({
-      optimizer: tf.train.sgd(0.1),
-      loss: 'meanSquaredError',
-    });
-
+    console.log("Modelo compilado");
+  
+  
+    console.log("Modelo compilado");
+  
     const inputs = tf.tensor2d([
       [1, 2],
       [3, 4],
@@ -64,24 +48,33 @@ export const Addition = () => {
       [11],
       [15],
     ]);
-
-    console.log('Training model...');
-    await model.fit(inputs, outputs, {
-      epochs: 10,
-      callbacks: {
-        onEpochEnd: (epoch, logs) => {
-          console.log(`Epoch ${epoch + 1}: Loss = ${logs?.loss}`);
-        },
-      },
-    });
-    console.log('Model trained!');
-
+  
+    const trainModel = async () => {
+      console.log("Entrenando el modelo...");
+      try {
+        await model.fit(inputs, outputs, {
+          epochs: 5, // Puedes ajustar este número
+          callbacks: {
+            onEpochEnd: (epoch, logs) => {
+              console.log(`Epoch ${epoch + 1}: Loss = ${logs?.loss}`);
+            },
+          },
+        });
+        console.log("Entrenamiento del modelo completado!");
+      } catch (error) {
+        console.error("Error durante el entrenamiento:", error);
+      }
+    };
+  
+    // Llamar a la función de entrenamiento de manera asíncrona
+    await trainModel();
+  
     return model;
-  };
+  };  
 
   const generateSum = () => {
     if (!model) {
-      console.log('Model is not ready yet.');
+      console.log("Model is not ready yet.");
       return;
     }
     const num1 = Math.floor(Math.random() * 10);
@@ -98,10 +91,13 @@ export const Addition = () => {
       const predictedTensor = model.predict(inputTensor) as tf.Tensor;
       const predictedValue = (await predictedTensor.data())[0];
 
-      inputTensor.dispose();
-      predictedTensor.dispose();
+      // Log the values for debugging
+      console.log(`User Answer: ${userAnswer}, Predicted Value: ${predictedValue}`);
 
-      if (Math.abs(predictedValue - Number(userAnswer)) < 1) {
+      // Convert the user's answer to a number
+      const answer = parseFloat(userAnswer);
+
+      if (!isNaN(answer) && Math.abs(predictedValue - answer) < 1) {
         setFeedback('Correct! Great job!');
       } else {
         setFeedback(`Incorrect. The correct answer is ${Math.round(predictedValue)}.`);
