@@ -13,13 +13,17 @@ export const HomeScreen = () => {
     { id: 2, title: 'Card 2', color: '#33FF57' },
     { id: 3, title: 'Card 3', color: '#3357FF' },
     { id: 4, title: 'Card 4', color: '#F5A623' },
+    { id: 5, title: 'Card 5', color: '#33FF57' },
+    { id: 6, title: 'Card 6', color: '#33FF57' },
   ];
 
   const categorias = [
     { id: 1, title: 'Suma', color: 'rgba(37, 53, 71, 0.8)', image: <Image source={require('../../assets/images/suma.png')} style={styles.iconSuma}/>},
     { id: 2, title: 'Resta', color: 'rgba(29, 74, 59, 0.72)', image: <Image source={require('../../assets/images/resta.png')} style={styles.iconCategory}/> },
     { id: 3, title: 'Multiplicación', color: 'rgb(232,186,97)', image: <Image source={require('../../assets/images/multiplicación.png')} style={styles.iconCategory}/> },
-    { id: 4, title: 'División', color: 'rgba(37, 53, 71, 0.65)', image: <Image source={require('../../assets/images/división.png')} style={styles.iconDivision}/> },
+    { id: 4, title: 'División', color: 'rgb(236, 196, 116)', image: <Image source={require('../../assets/images/división.png')} style={styles.iconDivision}/> },
+    { id: 5, title: 'Fracciones', color: 'rgba(29, 74, 59, 0.62)', image: <Image source={require('../../assets/images/resta.png')} style={styles.iconTutor}/> },
+    { id: 6, title: 'Tutor', color: 'rgba(29, 74, 59, 0.88)', image: <Image source={require('../../assets/images/resta.png')} style={styles.iconTutor}/> },
   ];
 
   const [activeCategory, setActiveCategory] = useState(Number);
@@ -93,6 +97,8 @@ export const HomeScreen = () => {
               // Navega según la categoría
               if (categoria.title === 'Suma') {
                 navigation.navigate('Addition' as never);// Navega a la pantalla de Suma
+              }else if(categoria.title === 'Tutor') {
+                navigation.navigate('Tutor' as never);
               } 
             }}
           >
@@ -105,7 +111,7 @@ export const HomeScreen = () => {
 
         {/* Segunda fila: 2 tarjetas */}
         <View style={styles.row}>
-          {categorias.slice(3, 5).map((categoria) => (
+          {categorias.slice(3, 6).map((categoria) => (
             <View key={categoria.id} style={[styles.cardCategories, { backgroundColor: categoria.color }]}>
               <View style={styles.circle} />
               {categoria.image}
@@ -235,6 +241,11 @@ const styles = StyleSheet.create({
     padding: 45,
   },
   iconDivision: {
+    width: '60%',
+    height: '60%',
+    marginBottom: 20,
+  },
+  iconTutor: {
     width: '60%',
     height: '60%',
     marginBottom: 20,
