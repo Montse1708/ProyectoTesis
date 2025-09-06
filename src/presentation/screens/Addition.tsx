@@ -1,148 +1,115 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, FlatList } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Button, TextInput, StyleSheet, ActivityIndicator, Alert, FlatList } from 'react-native';
+import axios from 'axios';
 
-type Example = { id: string; a: number; b: number; result: number };
+// Cambia esto según dónde corre tu backend:
+const API_URL =
+  // Android emulador:
+  'http://10.0.2.2:3000';
+// iOS simulador (en Mac):
+// 'http://localhost:3000';
+// Dispositivo físico (misma red):
+// 'http://TU.IP.LAN:3000';
 
-const randInt = (max: number) => Math.floor(Math.random() * (max + 1));
+type Problem = { id?: string; a: number; b: number; questionText?: string; solution?: number };
 
 export const Addition = () => {
-  const [a, setA] = useState<number | null>(null);
-  const [b, setB] = useState<number | null>(null);
-  const [answer, setAnswer] = useState<string>('');
-  const [feedback, setFeedback] = useState<string>('');
-  const [history, setHistory] = useState<Example[]>([]);
-  const [maxNum, setMaxNum] = useState(9);
+  const [loading, setLoading] = useState(false);
+  const [problems, setProblems] = useState<Problem[]>([]);
+  const [current, setCurrent] = useState(0);
+  const [answer, setAnswer] = useState('');
+  const [feedback, setFeedback] = useState('');
 
-  // Genera un primer ejercicio al montar
-  useEffect(() => {
-    generate();
-  }, []);
-
-  const generate = () => {
-    const x = randInt(maxNum);
-    const y = randInt(maxNum);
-    setA(x);
-    setB(y);
-    setAnswer('');
-    setFeedback('');
+  const load = async () => {
+    try {
+      setLoading(true);
+      setFeedback('');
+      const res = await axios.post(`${API_URL}/generate`, { count: 5, maxNum: 20, locale: 'es' });
+      // el endpoint devuelve { problems: [...] } (según la versión que pegaste)
+      const arr = res.data?.problems ?? [];
+      if (!arr.length) throw new Error('Sin problemas generados');
+      setProblems(arr);
+      setCurrent(0);
+      setAnswer('');
+    } catch (e: any) {
+      Alert.alert('Error generando', String(e?.message || e));
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const check = () => {
-    if (a == null || b == null) return;
-    const correct = a + b;
-    const user = Number(answer);
-    if (!Number.isFinite(user)) {
-      setFeedback('Ingresa un número válido.');
-      return;
+  const grade = async () => {
+    const p = problems[current];
+    if (!p) return;
+    try {
+      setLoading(true);
+      const res = await axios.post(`${API_URL}/grade`, { a: p.a, b: p.b, userAnswer: Number(answer), locale: 'es' });
+      const data = res.data;
+      setFeedback(`${data.correct ? '✅' : '❌'} ${data.feedback ?? ''}`);
+    } catch (e: any) {
+      Alert.alert('Error corrigiendo', String(e?.message || e));
+    } finally {
+      setLoading(false);
     }
-    if (user === correct) {
-      setFeedback('✅ ¡Correcto! ¡Buen trabajo!');
+  };
+
+  const next = () => {
+    if (current + 1 < problems.length) {
+      setCurrent(i => i + 1);
+      setAnswer('');
+      setFeedback('');
     } else {
-      setFeedback(`❌ Incorrecto. La respuesta es ${correct}.`);
+      Alert.alert('Fin', 'Genera un nuevo set.');
     }
   };
 
-  // “Entrenamiento” simulado: autogenera pares y los guarda en un historial
-  // (Sin ML; útil para mostrar que el sistema puede auto-crear ejercicios y soluciones)
-  const autoTrain = (n = 50) => {
-    const batch: Example[] = [];
-    for (let i = 0; i < n; i++) {
-      const x = randInt(maxNum);
-      const y = randInt(maxNum);
-      batch.push({ id: `${Date.now()}-${i}`, a: x, b: y, result: x + y });
-    }
-    setHistory(prev => [...batch, ...prev].slice(0, 200)); // guarda hasta 200
-  };
-
-  const header = useMemo(
-    () => (
-      <View style={{ marginBottom: 12 }}>
-        <Text style={styles.header}>Suma sin TF.js (100% RN)</Text>
-        <Text style={styles.sub}>Genera ejercicios y valida respuestas sin dependencias nativas.</Text>
-      </View>
-    ),
-    []
-  );
+  const p = problems[current];
 
   return (
     <View style={styles.container}>
-      {header}
+      <Text style={styles.title}>Suma con IA (backend)</Text>
+      <Button title="Nuevo set (IA)" onPress={load} />
+      {loading && <ActivityIndicator style={{ marginTop: 8 }} />}
 
-      <View style={styles.card}>
-        <Text style={styles.label}>Rango de números (máx):</Text>
-        <View style={styles.row}>
-          <Button title="-5" onPress={() => setMaxNum(m => Math.max(1, m - 5))} />
-          <Text style={styles.value}>{maxNum}</Text>
-          <Button title="+5" onPress={() => setMaxNum(m => Math.min(999, m + 5))} />
+      {p ? (
+        <View style={styles.card}>
+          <Text style={styles.question}>{p.questionText ?? `¿Cuánto es ${p.a} + ${p.b}?`}</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            placeholder="Tu respuesta"
+            value={answer}
+            onChangeText={setAnswer}
+          />
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <Button title="Revisar (IA)" onPress={grade} />
+            <Button title="Siguiente" onPress={next} />
+          </View>
+          {!!feedback && <Text style={styles.feedback}>{feedback}</Text>}
         </View>
-      </View>
+      ) : (
+        <Text style={{ marginTop: 8 }}>Pulsa “Nuevo set (IA)”.</Text>
+      )}
 
-      <View style={styles.card}>
-        {a != null && b != null ? (
-          <Text style={styles.question}>¿Cuánto es {a} + {b}?</Text>
-        ) : (
-          <Text style={styles.question}>Presiona “Nueva suma”.</Text>
+      <FlatList
+        style={{ marginTop: 12, maxHeight: 160 }}
+        data={problems}
+        keyExtractor={(_, i) => `p-${i}`}
+        renderItem={({ item }) => (
+          <Text style={styles.item}>{item.questionText ?? `${item.a} + ${item.b}`}</Text>
         )}
-
-        <TextInput
-          style={styles.input}
-          keyboardType="numeric"
-          placeholder="Tu respuesta"
-          value={answer}
-          onChangeText={setAnswer}
-        />
-
-        <View style={styles.row}>
-          <Button title="Revisar" onPress={check} />
-          <View style={{ width: 12 }} />
-          <Button title="Nueva suma" onPress={generate} />
-        </View>
-
-        <Text style={styles.feedback}>{feedback}</Text>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.label}>Autogenerar ejercicios (sin ML)</Text>
-        <View style={styles.row}>
-          <Button title="+10" onPress={() => autoTrain(10)} />
-          <View style={{ width: 12 }} />
-          <Button title="+50" onPress={() => autoTrain(50)} />
-          <View style={{ width: 12 }} />
-          <Button title="Limpiar" onPress={() => setHistory([])} />
-        </View>
-
-        <Text style={styles.smallNote}>
-          Se crean pares entrada→salida (ej.: “12+7=19”) y se guardan en la lista.
-        </Text>
-
-        <FlatList
-          style={{ marginTop: 10, maxHeight: 180 }}
-          data={history}
-          keyExtractor={(x) => x.id}
-          renderItem={({ item }) => (
-            <Text style={styles.exampleItem}>
-              {item.a} + {item.b} = {item.result}
-            </Text>
-          )}
-          ListEmptyComponent={<Text style={styles.muted}>No hay ejemplos aún.</Text>}
-        />
-      </View>
+        ListEmptyComponent={<Text style={{ color: '#777' }}>Sin lista aún.</Text>}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#f5f5f5' },
-  header: { fontSize: 22, fontWeight: '700', marginBottom: 4 },
-  sub: { color: '#666', marginBottom: 12 },
-  card: { backgroundColor: '#fff', padding: 16, borderRadius: 12, marginBottom: 12, elevation: 1 },
-  label: { fontWeight: '600', marginBottom: 8 },
+  title: { fontSize: 20, fontWeight: '700', marginBottom: 12 },
+  card: { backgroundColor: '#fff', padding: 16, borderRadius: 12, marginTop: 12 },
   question: { fontSize: 18, marginBottom: 10 },
   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 10, backgroundColor: '#fff', marginBottom: 10 },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start' },
-  value: { marginHorizontal: 12, fontSize: 16, minWidth: 32, textAlign: 'center' },
-  feedback: { marginTop: 10, fontSize: 16 },
-  smallNote: { fontSize: 12, color: '#666', marginTop: 8 },
-  exampleItem: { fontFamily: 'monospace', fontSize: 14, paddingVertical: 2 },
-  muted: { color: '#999', fontStyle: 'italic' },
+  feedback: { marginTop: 8, fontSize: 16 },
+  item: { fontFamily: 'monospace', paddingVertical: 2 },
 });
