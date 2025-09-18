@@ -1,13 +1,8 @@
-import React, { useState } from 'react';
-import { View, Text, Button, TextInput, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, TextInput, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import axios from 'axios';
 
-// Cambia esto según dónde corre tu backend:
-const API_URL =
-  // Android emulador:
-  'http://10.0.2.2:3000';
-// iOS simulator: 'http://localhost:3000'
-// Dispositivo físico: 'http://<IP-LAN-de-tu-PC>:3000'
+const API_URL = 'http://10.0.2.2:3000';
 
 type Problem = {
   id?: string;
@@ -23,25 +18,44 @@ export const Addition = () => {
   const [problem, setProblem] = useState<Problem | null>(null);
   const [answer, setAnswer] = useState('');
   const [feedback, setFeedback] = useState('');
+  const [grading, setGrading] = useState(false);
+  const lastGradedProblemId = useRef<string | null>(null);
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
+  // === helpers ===
   const start = async () => {
     try {
       setLoading(true);
       setFeedback('');
       setProblem(null);
       setAnswer('');
-
-      // 1) crear sesión
-      const s = await axios.post(`${API_URL}/session/start`);
+      const s = await axios.post(`${API_URL}/session/start`, { op: 'add' });
       const sid = s.data?.sessionId;
       if (!sid) throw new Error('No sessionId from server');
       setSessionId(sid);
 
-      // 2) primer problema
-      const n = await axios.post(`${API_URL}/session/next`, { sessionId: sid, locale: 'es' });
+      const n = await axios.post(`${API_URL}/session/next`, { sessionId: sid, op: 'add', locale: 'es' });
       const p = n.data?.problem;
       if (!p) throw new Error('No problem from server');
       setProblem(p);
+    } catch (e: any) {
+      Alert.alert('Error', String(e?.message || e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchNext = async () => {
+    if (!sessionId) return;
+    try {
+      setLoading(true);
+      const n = await axios.post(`${API_URL}/session/next`, { sessionId, op: 'add', locale: 'es' });
+      const p = n.data?.problem;
+      if (!p) throw new Error('No problem from server');
+      setProblem(p);
+      setAnswer('');
+      setFeedback('');
+      lastGradedProblemId.current = null;
     } catch (e: any) {
       Alert.alert('Error', String(e?.message || e));
     } finally {
@@ -51,65 +65,81 @@ export const Addition = () => {
 
   const grade = async () => {
     if (!problem || !sessionId) return;
+    if (grading) return;
+    if ((answer ?? '').trim() === '') return;
+    if (lastGradedProblemId.current === problem.id) return;
+
     try {
-      setLoading(true);
+      setGrading(true);
       const res = await axios.post(`${API_URL}/session/grade`, {
         sessionId,
         userAnswer: Number(answer),
         locale: 'es',
       });
       const data = res.data;
-      setFeedback(`${data.correct ? '✅' : '❌'} ${data.feedback ?? ''}`);
+
+      // aquí armamos el feedback textual
+      if (data.correct) {
+        setFeedback(`✅ CORRECTO. ${data.feedback ?? ''}`);
+      } else {
+        setFeedback(`❌ INCORRECTO. ${data.feedback ?? ''}`);
+      }
+
+      setTimeout(() => {
+        fetchNext();
+      }, 1000);
+      lastGradedProblemId.current = problem.id || 'unknown';
     } catch (e: any) {
       Alert.alert('Error corrigiendo', String(e?.message || e));
     } finally {
-      setLoading(false);
+      setGrading(false);
     }
   };
 
-  const next = async () => {
-    if (!sessionId) return;
-    try {
-      setLoading(true);
-      const n = await axios.post(`${API_URL}/session/next`, { sessionId, locale: 'es' });
-      const p = n.data?.problem;
-      if (!p) throw new Error('No problem from server');
-      setProblem(p);
-      setAnswer('');
-      setFeedback('');
-    } catch (e: any) {
-      Alert.alert('Error', String(e?.message || e));
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    start();
+  }, []);
+
+  useEffect(() => {
+    if (!problem) return;
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    if (answer.trim() !== '') {
+      debounceTimer.current = setTimeout(() => {
+        grade();
+      }, 600);
     }
-  };
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answer, problem?.id]);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Suma con IA (backend adaptativo)</Text>
-      <Button title="Nueva sesión (IA)" onPress={start} />
-      {loading && <ActivityIndicator style={{ marginTop: 8 }} />}
+      <Text style={styles.title}>Suma</Text>
+
+      {(loading || grading) && <ActivityIndicator style={{ marginTop: 8 }} />}
 
       {problem ? (
         <View style={styles.card}>
           <Text style={styles.question}>
             {problem.questionText ?? `¿Cuánto es ${problem.a} + ${problem.b}?`}
           </Text>
+
           <TextInput
             style={styles.input}
             keyboardType="numeric"
-            placeholder="Tu respuesta"
+            placeholder="Escribe tu respuesta…"
             value={answer}
             onChangeText={setAnswer}
+            onSubmitEditing={grade}
+            blurOnSubmit
           />
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <Button title="Revisar (IA)" onPress={grade} />
-            <Button title="Siguiente" onPress={next} />
-          </View>
+
           {!!feedback && <Text style={styles.feedback}>{feedback}</Text>}
         </View>
       ) : (
-        <Text style={{ marginTop: 8 }}>Pulsa “Nueva sesión (IA)”.</Text>
+        <Text style={{ marginTop: 8 }}>Cargando problema...</Text>
       )}
     </View>
   );
@@ -121,5 +151,5 @@ const styles = StyleSheet.create({
   card: { backgroundColor: '#fff', padding: 16, borderRadius: 12, marginTop: 12 },
   question: { fontSize: 18, marginBottom: 10 },
   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 10, backgroundColor: '#fff', marginBottom: 10 },
-  feedback: { marginTop: 8, fontSize: 16 }
+  feedback: { marginTop: 8, fontSize: 16, fontWeight: '600' }
 });
