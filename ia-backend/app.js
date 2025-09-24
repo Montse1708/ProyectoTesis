@@ -1,4 +1,4 @@
-// app.js (ESM) — Backend adaptativo multi-operación (add/sub/mul/div) con Transformer + fallback
+// app.js (ESM) — Backend adaptativo multi-operación (add/sub/mul/div) con Transformer + fallback + logs de carga
 import express from "express";
 import cors from "cors";
 import { pipeline } from "@xenova/transformers";
@@ -8,7 +8,8 @@ app.use(cors());
 app.use(express.json());
 
 // =============== Healthcheck ===============
-app.get("/health", (_req, res) => res.json({ ok: true }));
+let llmReady = false;
+app.get("/health", (_req, res) => res.json({ ok: true, llmReady }));
 
 // =============== Sesiones en memoria ===============
 /*
@@ -275,10 +276,33 @@ function sanitizeProblems(obj, count, op, L, locale) {
   return { problems: out };
 }
 
-// =============== Carga Transformer ===============
-console.log("Cargando modelo (t5-small)...");
-const text2text = await pipeline("text2text-generation", "Xenova/t5-small");
-console.log("Modelo listo ✅");
+// =============== Carga Transformer (con progreso + warmup + “modelo listo”) ===============
+console.log("USE_LLM=true → iniciando carga del modelo (t5-small) …");
+let text2text = null;
+try {
+  text2text = await pipeline(
+    "text2text-generation",
+    "Xenova/t5-small",
+    {
+      progress_callback: (data) => {
+        // data: { status, file?, progress? }
+        const status = data?.status ?? "status";
+        const file = data?.file ? ` ${data.file}` : "";
+        const prog = (data?.progress ?? "") !== "" ? ` ${data.progress}%` : "";
+        console.log(`[transformers] ${status}${file}${prog}`);
+      },
+    }
+  );
+
+  // Warmup corto para evitar lag en la primera petición real
+  await text2text("{}", { max_new_tokens: 1, do_sample: false });
+
+  llmReady = true;
+  console.log("✅ Modelo listo (t5-small)");
+} catch (e) {
+  console.error("❌ No se pudo cargar el modelo. Se usará el generador fallback:", e?.message || e);
+  llmReady = false;
+}
 
 // =============== Prompts (generativo) ===============
 const genOnePrompt = ({ op, a, b, locale }) => `
@@ -321,11 +345,13 @@ function updateLevel(session, wasCorrect) {
     if (session.streak >= 3 && session.level < 5) {
       session.level += 1;
       session.streak = 0;
+      console.log(`[nivel↑] ${session.level - 1}→${session.level}`);
     }
   } else {
     session.streak = Math.max(0, session.streak - 1);
     session.wrong += 1;
     if (session.wrong % 2 === 0 && session.level > 1) {
+      console.log(`[nivel↓] ${session.level}→${session.level - 1} (errores=${session.wrong})`);
       session.level -= 1;
     }
   }
@@ -471,5 +497,5 @@ app.post("/grade", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () =>
-  console.log(`🧠 Backend adaptativo (multi-op) en http://localhost:${PORT}`)
+  console.log(`🧠 Backend adaptativo (multi-op) en http://localhost:${PORT} | llmReady=${llmReady}`)
 );
