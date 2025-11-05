@@ -4,6 +4,7 @@ import Carousel from 'react-native-reanimated-carousel';
 import LinearGradient from 'react-native-linear-gradient'; // Importa LinearGradient
 import { ScrollView } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
+import { Multiplication } from './Multiplication';
 const { width } = Dimensions.get('window'); // Ancho de la pantalla
 const { height } = Dimensions.get('window'); // Altura de la pantalla
 
@@ -97,6 +98,10 @@ export const HomeScreen = () => {
               // Navega según la categoría
               if (categoria.title === 'Suma') {
                 navigation.navigate('Addition' as never);// Navega a la pantalla de Suma
+              }else if(categoria.title == 'Resta'){
+                navigation.navigate('Subtraction' as never);
+              }else if(categoria.title == 'Multiplicación'){
+                navigation.navigate('Multiplication' as never);
               }else if(categoria.title === 'Tutor') {
                 navigation.navigate('Tutor' as never);
               } 
@@ -112,16 +117,21 @@ export const HomeScreen = () => {
         {/* Segunda fila: 2 tarjetas */}
         <View style={styles.row}>
           {categorias.slice(3, 6).map((categoria) => (
-            <View key={categoria.id} style={[styles.cardCategories, { backgroundColor: categoria.color }]}>
+            <Pressable key={categoria.id}  style={[styles.cardCategories, { backgroundColor: categoria.color }]}
+            onPress={() => {
+              if (categoria.title === 'División') {
+                navigation.navigate('Division' as never);// Navega a la pantalla de Suma
+              }
+            }}
+            >
               <View style={styles.circle} />
               {categoria.image}
               <Text style={styles.cardTextCategories}>{categoria.title}</Text>
-            </View>
+            </Pressable>
           ))}
         </View>
       </View>
-
-        </View>
+      </View>
     </View>
   );
 };

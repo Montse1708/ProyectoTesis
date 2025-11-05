@@ -3,6 +3,9 @@ import { Login } from '../presentation/screens/Login';
 import { PrincipalScreen } from '../presentation/screens/PrincipalScreen';
 import { MenuNavigation } from './MenuNavigation';
 import { Addition } from '../presentation/screens/Addition';
+import { Subtraction } from '../presentation/screens/Subtraction';
+import { Multiplication } from '../presentation/screens/Multiplication';
+import { Division } from '../presentation/screens/Division';
 const Stack = createStackNavigator();
 
 export const StackNavigation = () => {
@@ -15,6 +18,12 @@ export const StackNavigation = () => {
       <Stack.Screen name="HomeScreen" component={MenuNavigation} //options={{ headerShown: false }} 
       />
       <Stack.Screen name="Addition" component={Addition} //options={{ headerShown: false }} 
+      />
+      <Stack.Screen name='Subtraction' component={Subtraction}
+      />
+      <Stack.Screen name='Multiplication' component={Multiplication}
+      />
+      <Stack.Screen name='Division' component={Division}
       />
     </Stack.Navigator>
   );
