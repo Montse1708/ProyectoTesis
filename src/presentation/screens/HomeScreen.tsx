@@ -19,12 +19,12 @@ export const HomeScreen = () => {
   ];
 
   const categorias = [
-    { id: 1, title: 'Suma', color: 'rgba(37, 53, 71, 0.8)', image: <Image source={require('../../assets/images/suma.png')} style={styles.iconSuma}/>},
-    { id: 2, title: 'Resta', color: 'rgba(29, 74, 59, 0.72)', image: <Image source={require('../../assets/images/resta.png')} style={styles.iconCategory}/> },
-    { id: 3, title: 'Multiplicación', color: 'rgb(232,186,97)', image: <Image source={require('../../assets/images/multiplicación.png')} style={styles.iconCategory}/> },
-    { id: 4, title: 'División', color: 'rgb(236, 196, 116)', image: <Image source={require('../../assets/images/división.png')} style={styles.iconDivision}/> },
-    { id: 5, title: 'Fracciones', color: 'rgba(29, 74, 59, 0.62)', image: <Image source={require('../../assets/images/resta.png')} style={styles.iconTutor}/> },
-    { id: 6, title: 'Tutor', color: 'rgba(29, 74, 59, 0.88)', image: <Image source={require('../../assets/images/resta.png')} style={styles.iconTutor}/> },
+    { id: 1, title: 'Series', color: 'rgba(37, 53, 71, 0.8)', image: <Image source={require('../../assets/images/series.png')} style={styles.iconSuma}/>},
+    { id: 2, title: 'Suma', color: 'rgba(29, 74, 59, 0.72)', image: <Image source={require('../../assets/images/suma.png')} style={styles.iconCategory}/> },
+    { id: 3, title: 'Resta', color: 'rgb(232,186,97)', image: <Image source={require('../../assets/images/resta.png')} style={styles.iconCategory}/> },
+    { id: 4, title: 'Multiplicación', color: 'rgb(236, 196, 116)', image: <Image source={require('../../assets/images/multiplicación.png')} style={styles.iconDivision}/> },
+    { id: 5, title: 'División', color: 'rgba(29, 74, 59, 0.62)', image: <Image source={require('../../assets/images/división.png')} style={styles.iconTutor}/> },
+    { id: 6, title: 'Fracciones', color: 'rgba(29, 74, 59, 0.88)', image: <Image source={require('../../assets/images/fracciones.png')} style={styles.iconTutor}/> },
   ];
 
   const [activeCategory, setActiveCategory] = useState(Number);
@@ -96,14 +96,12 @@ export const HomeScreen = () => {
             <Pressable key={categoria.id}  style={[styles.cardCategories, { backgroundColor: categoria.color }]}
             onPress={() => {
               // Navega según la categoría
-              if (categoria.title === 'Suma') {
-                navigation.navigate('Addition' as never);// Navega a la pantalla de Suma
+              if (categoria.title === 'Series') {
+                navigation.navigate('Series' as never);// Navega a la pantalla de Suma
+              }else if(categoria.title == 'Suma'){
+                navigation.navigate('Addition' as never);
               }else if(categoria.title == 'Resta'){
                 navigation.navigate('Subtraction' as never);
-              }else if(categoria.title == 'Multiplicación'){
-                navigation.navigate('Multiplication' as never);
-              }else if(categoria.title === 'Tutor') {
-                navigation.navigate('Tutor' as never);
               } 
             }}
           >
@@ -119,8 +117,12 @@ export const HomeScreen = () => {
           {categorias.slice(3, 6).map((categoria) => (
             <Pressable key={categoria.id}  style={[styles.cardCategories, { backgroundColor: categoria.color }]}
             onPress={() => {
-              if (categoria.title === 'División') {
-                navigation.navigate('Division' as never);// Navega a la pantalla de Suma
+              if (categoria.title === 'Multiplicación') {
+                navigation.navigate('Multiplication' as never);// Navega a la pantalla de Suma
+              }else if(categoria.title === 'División') { 
+                navigation.navigate('Division' as never);
+              }else if(categoria.title === 'Fracciones'){
+                navigation.navigate('Fractions' as never)
               }
             }}
             >

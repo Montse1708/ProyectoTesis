@@ -6,6 +6,9 @@ import { Addition } from '../presentation/screens/Addition';
 import { Subtraction } from '../presentation/screens/Subtraction';
 import { Multiplication } from '../presentation/screens/Multiplication';
 import { Division } from '../presentation/screens/Division';
+import { Fractions } from '../presentation/screens/Fraction';
+import { Series } from '../presentation/screens/Series';
+
 const Stack = createStackNavigator();
 
 export const StackNavigation = () => {
@@ -24,6 +27,10 @@ export const StackNavigation = () => {
       <Stack.Screen name='Multiplication' component={Multiplication}
       />
       <Stack.Screen name='Division' component={Division}
+      />
+      <Stack.Screen name='Fractions' component={Fractions}
+      />
+      <Stack.Screen name='Series' component={Series}
       />
     </Stack.Navigator>
   );

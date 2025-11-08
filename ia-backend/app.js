@@ -1,4 +1,7 @@
-// app.js (ESM) — Backend adaptativo (cola + prefetch) con LLM opcional cargado en background
+// app.js (ESM) — Backend adaptativo (cola + prefetch) con LLM opcional
+// Operaciones: enteras (add, sub, mul, div), fracciones (frac) y series de números (seq)
+// 'frac' incluye: suma, resta, multiplicación y división de fracciones (aleatorio por problema)
+// 'seq' incluye: series aritméticas/geométricas con tareas de "next" (siguiente término) o "sum" (S_n)
 import express from "express";
 import cors from "cors";
 
@@ -8,8 +11,8 @@ app.use(express.json());
 
 // ================== Config ==================
 const envBool = (v) => typeof v === "string" && /^(1|true|t|yes|y|on)$/i.test(v.trim());
-const USE_LLM = envBool(process.env.USE_LLM);           // Off por defecto (velocidad)
-const QUEUE_TARGET = Number(process.env.QUEUE_TARGET ?? 3); // Problemas precargados por sesión
+const USE_LLM = envBool(process.env.USE_LLM);                 // Off por defecto (velocidad)
+const QUEUE_TARGET = Number(process.env.QUEUE_TARGET ?? 3);   // Problemas precargados por sesión
 
 console.log(`[boot] Node ${process.version} | USE_LLM=${USE_LLM} (raw="${process.env.USE_LLM || ""}")`);
 
@@ -24,7 +27,6 @@ async function loadLLM() {
   }
   console.log("USE_LLM=true → iniciando carga del modelo (t5-small) en background…");
   try {
-    // Import dinámico para no requerir la dep si no se usa
     const { pipeline } = await import("@xenova/transformers");
     text2text = await pipeline("text2text-generation", "Xenova/t5-small", {
       progress_callback: (d) => {
@@ -34,7 +36,6 @@ async function loadLLM() {
         console.log(`[transformers] ${status}${file}${prog}`);
       },
     });
-    // Warm-up para evitar “congelón” en la 1ª inferencia real
     await text2text("{}", { max_new_tokens: 1, do_sample: false });
     llmReady = true;
     console.log("✅ Modelo listo (t5-small)");
@@ -53,7 +54,7 @@ app.get("/health", (_req, res) =>
 // ================== Sesiones ==================
 /*
 sessions[sessionId] = {
-  op: "add"|"sub"|"mul"|"div",
+  op: "add"|"sub"|"mul"|"div"|"frac"|"seq",
   level: 1..5, streak: 0.., correct: 0, wrong: 0,
   lastProblem: {...} | null,
   nextPrefetchedProblem: {...} | null,
@@ -61,9 +62,55 @@ sessions[sessionId] = {
 }
 */
 const sessions = new Map();
-const OPS = /** @type const */ (["add","sub","mul","div"]);
+
+// ======= Fracciones: helpers =======
+const gcd = (a, b) => {
+  a = Math.abs(a); b = Math.abs(b);
+  while (b) [a, b] = [b, a % b];
+  return a || 1;
+};
+const simplify = (n, d) => {
+  if (d === 0) return { n: 0, d: 1 };
+  const g = gcd(n, d);
+  const s = d < 0 ? -1 : 1;
+  return { n: (n / g) * s, d: Math.abs(d / g) };
+};
+const fracToString = ({ n, d }) => `${n}/${d}`;
+const equalFrac = (a, b) => a.n * b.d === b.n * a.d;
+
+function parseUserFraction(input) {
+  if (typeof input === "number" && Number.isFinite(input)) {
+    const d = 1000;
+    return simplify(Math.round(input * d), d);
+  }
+  const txt = String(input ?? "").trim().replace(",", ".");
+  if (/^-?\d+\/-?\d+$/.test(txt)) {
+    const [nn, dd] = txt.split("/").map(Number);
+    return simplify(nn, dd);
+  }
+  const asNum = Number(txt);
+  if (Number.isFinite(asNum)) {
+    const d = 1000;
+    return simplify(Math.round(asNum * d), d);
+  }
+  return null;
+}
+
+function randomFraction(maxDen = 12) {
+  const d = Math.max(2, Math.floor(2 + Math.random() * maxDen));
+  const n = Math.floor(1 + Math.random() * (d - 1));
+  return simplify(n, d);
+}
+
+// ======= Operaciones soportadas =======
+// 'frac' = una sola operación que incluye fadd/fsub/fmul/fdiv de forma aleatoria
+// 'seq'  = series (aritmética/geométrica), tareas: "next" o "sum"
+const OPS = /** @type const */ (["add","sub","mul","div","frac","seq"]);
 const isOp = (x) => OPS.includes(String(x));
-const sym = { add: "+", sub: "−", mul: "×", div: "÷" };
+const sym = {
+  add: "+", sub: "−", mul: "×", div: "÷",
+  // para 'frac' y 'seq' el símbolo se elige/omite internamente
+};
 
 const coerceInt = (v, d = 0) => {
   const n = parseInt(String(v), 10);
@@ -91,12 +138,16 @@ function levelConfig(op, level) {
     sub: [9, 20, 50, 99, 999],
     mul: [5, 10, 12, 20, 50],
     div: [5, 10, 12, 20, 50],
+    frac: [6, 8, 10, 12, 20], // máx denominador fracciones
+    seq:  [20, 40, 80, 120, 200], // magnitud de términos/params de series
   };
   const carries = {
     add: [0, .2, .4, .6, .8],
     sub: [0, .2, .4, .6, .8],
     mul: [0, .15, .3, .45, .6],
     div: [0, .15, .3, .45, .6],
+    frac: [0, .15, .3, .45, .6],
+    seq:  [0, .1, .2, .35, .5], // más “trucos” conforme sube el nivel
   };
   return { level: L, maxNum: ranges[op][L - 1], carryBorrowBias: carries[op][L - 1] };
 }
@@ -107,6 +158,7 @@ function computeSolution(op, a, b, { integerDiv = true } = {}) {
     case "sub": return a - b;
     case "mul": return a * b;
     case "div": return integerDiv ? Math.floor(a / b) : a / b;
+    // 'frac' y 'seq' se resuelven en problemFor
     default: return a + b;
   }
 }
@@ -165,6 +217,7 @@ function makeOperands(op, { maxNum, wantCarryBorrow }) {
     if (wantCarryBorrow) quotient = Math.max(quotient, Math.floor(maxNum * 0.6));
     return [divisor * quotient, divisor];
   }
+  // para 'frac' y 'seq' no usamos enteros aquí (se arma en problemFor)
   return [
     Math.floor(Math.random() * (maxNum + 1)),
     Math.floor(Math.random() * (maxNum + 1)),
@@ -174,6 +227,126 @@ function makeOperands(op, { maxNum, wantCarryBorrow }) {
 function problemFor(op, L, locale = "es") {
   const { maxNum, carryBorrowBias } = levelConfig(op, L);
   const want = Math.random() < carryBorrowBias;
+
+  // ----- Series/Secuencias (op: 'seq') -----
+  if (op === "seq") {
+    // Elegir tipo de secuencia y tarea
+    const seqType = Math.random() < 0.5 ? "arith" : "geom"; // aritmética o geométrica
+    // Niveles bajos evitan 'sum' para no sobrecargar
+    const task = (L >= 3 && Math.random() < 0.45) ? "sum" : "next";
+
+    // Parámetros seguros (enteros)
+    const a1 = clamp(Math.floor(1 + Math.random() * Math.min(9, Math.floor(maxNum/5))), 1, maxNum);
+    let d = clamp(Math.floor(1 + Math.random() * Math.min(9, Math.floor(maxNum/10))), 1, maxNum);
+    let r = clamp(Math.floor(2 + Math.random() * 4), 2, 6); // r >=2 para evitar triviales
+    if (seqType === "arith" && d === 0) d = 1;
+
+    // Longitud visible (siempre mostramos 4 o 5 términos)
+    const visibleTerms = (L >= 3) ? 5 : 4;
+
+    // Construye secuencia para mostrar
+    const terms = [];
+    if (seqType === "arith") {
+      for (let k = 0; k < visibleTerms; k++) terms.push(a1 + k * d);
+    } else {
+      for (let k = 0; k < visibleTerms; k++) terms.push(a1 * Math.pow(r, k));
+    }
+
+    // Definir solución según tarea
+    let solution;
+    let nForSum = clamp(visibleTerms + (L >= 4 ? 1 : 0), 4, 8); // S_n con n moderado
+
+    if (task === "next") {
+      // siguiente término
+      solution = (seqType === "arith")
+        ? a1 + visibleTerms * d
+        : a1 * Math.pow(r, visibleTerms);
+    } else {
+      // suma de los primeros n términos (entera por construcción)
+      if (seqType === "arith") {
+        // S_n = n/2 * [2a1 + (n-1)d]
+        solution = (nForSum * (2 * a1 + (nForSum - 1) * d)) / 2;
+      } else {
+        // S_n = a1 * (r^n - 1) / (r - 1)  | con r entero >= 2
+        solution = a1 * (Math.pow(r, nForSum) - 1) / (r - 1);
+      }
+    }
+
+    // Texto de la pregunta
+    const seqLabel = locale === "es" ? "Secuencia" : "Sequence";
+    const joiner = ", ";
+    const baseText = `${seqLabel}: ${terms.join(joiner)}`;
+    const askNext = locale === "es" ? "¿Cuál es el siguiente término?" : "What is the next term?";
+    const askSum  = locale === "es" ? `Calcula S${nForSum} (suma de los primeros ${nForSum} términos).`
+                                    : `Compute S${nForSum} (sum of first ${nForSum} terms).`;
+
+    const questionText = `${baseText}. ${task === "next" ? askNext : askSum}`;
+    const diffs = ["fácil","medio","difícil"];
+
+    const steps = (seqType === "arith")
+      ? (task === "next"
+          ? ["Identifica la diferencia común d.", "Suma d al último término mostrado.", `Resultado: ${solution}.`]
+          : ["Usa S_n = n/2 * [2a1 + (n−1)d].", "Sustituye valores y simplifica.", `Resultado: ${solution}.`])
+      : (task === "next"
+          ? ["Identifica la razón r.", "Multiplica el último término por r.", `Resultado: ${solution}.`]
+          : ["Usa S_n = a1 * (r^n − 1) / (r − 1).", "Sustituye valores y simplifica.", `Resultado: ${solution}.`]);
+
+    return {
+      id: nowId("pr"),
+      op,
+      a: 0, b: 0, // placeholders para compatibilidad
+      questionText,
+      difficulty: pick(diffs),
+      solution,        // entero
+      steps,
+      // metadatos útiles por si el front los quiere mostrar:
+      meta: { seqType, task, a1, d, r, n: nForSum, visibleTerms }
+    };
+  }
+
+  // ----- Fracciones (op: 'frac') -----
+  if (op === "frac") {
+    // elige aleatoriamente qué operación practicar
+    const realOp = pick(["fadd","fsub","fmul","fdiv"]);
+    const opsSym = { fadd: "+", fsub: "−", fmul: "×", fdiv: "÷" };
+
+    const A = randomFraction(maxNum);
+    let B = randomFraction(maxNum);
+    if (realOp === "fdiv" && B.n === 0) B.n = 1;
+
+    let sol;
+    if (realOp === "fadd" || realOp === "fsub") {
+      const s = (realOp === "fadd") ? +1 : -1;
+      sol = simplify(A.n * B.d + s * B.n * A.d, A.d * B.d);
+    } else if (realOp === "fmul") {
+      sol = simplify(A.n * B.n, A.d * B.d);
+    } else { // fdiv
+      sol = simplify(A.n * B.d, A.d * (B.n || 1));
+    }
+
+    const S = opsSym[realOp];
+    const qText = (locale === "es")
+      ? `¿Cuánto es ${A.n}/${A.d} ${S} ${B.n}/${B.d}?`
+      : `What is ${A.n}/${A.d} ${S} ${B.n}/${B.d}?`;
+
+    return {
+      id: nowId("pr"),
+      op,              // mantenemos 'frac' (no revelamos el subtipo)
+      a: 0, b: 0,      // placeholders para compatibilidad
+      questionText: qText,
+      difficulty: pick(["fácil","medio","difícil"]),
+      solution: sol,   // {n,d}
+      steps: [
+        realOp === "fmul" ? "Multiplica numeradores y denominadores."
+        : realOp === "fdiv" ? "Multiplica por el inverso de la segunda fracción."
+        : "Encuentra denominador común y suma/resta numeradores.",
+        "Simplifica la fracción.",
+        `Resultado: ${fracToString(sol)}.`,
+      ],
+    };
+  }
+
+  // ----- Operaciones enteras (original) -----
   const [a, b] = makeOperands(op, { maxNum, wantCarryBorrow: want });
   const S = sym[op] ?? "+";
   const diffs = ["fácil", "medio", "difícil"];
@@ -232,9 +405,55 @@ function tryParseJSON(text) {
 function sanitizeProblems(obj, count, op, L, locale) {
   if (!obj || !Array.isArray(obj.problems) || obj.problems.length === 0)
     return fallbackProblems(count, op, L, locale);
+
   const out = obj.problems.map((p) => {
-    const a = coerceInt(p?.a, 0), b = coerceInt(p?.b, 0);
     const opx = isOp(p?.op) ? p.op : op;
+
+    // Soporte 'seq' (si viniera de LLM o fuente externa)
+    if (opx === "seq") {
+      const qText = typeof p?.questionText === "string" && p.questionText.trim()
+        ? p.questionText.trim()
+        : (locale === "es" ? `Completa la secuencia.` : `Complete the sequence.`);
+      return {
+        id: p?.id ?? nowId("p"),
+        op: "seq",
+        a: 0, b: 0,
+        questionText: qText,
+        difficulty: ["fácil","medio","difícil"].includes(p?.difficulty) ? p.difficulty : "fácil",
+        solution: coerceInt(p?.solution, 0),
+        steps: Array.isArray(p?.steps) ? p.steps.map(String) : [],
+        meta: p?.meta ?? {}
+      };
+    }
+
+    // Soporte fracciones (incluye 'frac' ya que espera {n,d})
+    if (opx === "frac") {
+      // Intentar entender 'solution' desde LLM o inputs externos
+      let sol = p?.solution;
+      if (typeof sol === "string") {
+        const fr = parseUserFraction(sol);
+        sol = fr ?? simplify(0, 1);
+      } else if (sol && typeof sol === "object" && Number.isFinite(sol.n) && Number.isFinite(sol.d)) {
+        sol = simplify(sol.n, sol.d);
+      } else {
+        sol = simplify(0, 1);
+      }
+      const qText = typeof p?.questionText === "string" && p.questionText.trim()
+        ? p.questionText.trim()
+        : (locale === "es" ? `Resuelve operación con fracciones.` : `Solve fraction operation.`);
+      return {
+        id: p?.id ?? nowId("p"),
+        op: "frac",
+        a: 0, b: 0,
+        questionText: qText,
+        difficulty: ["fácil","medio","difícil"].includes(p?.difficulty) ? p.difficulty : "fácil",
+        solution: sol,
+        steps: Array.isArray(p?.steps) ? p.steps.map(String) : [],
+      };
+    }
+
+    // Numéricas "normales"
+    const a = coerceInt(p?.a, 0), b = coerceInt(p?.b, 0);
     let A = a, B = b;
     if (opx === "sub" && A < B) [A, B] = [B, A];
     if (opx === "div") {
@@ -255,6 +474,7 @@ function sanitizeProblems(obj, count, op, L, locale) {
       steps: Array.isArray(p?.steps) ? p.steps.map(String) : [],
     };
   });
+
   return { problems: out };
 }
 
@@ -281,13 +501,16 @@ function updateLevel(session, wasCorrect) {
 
 // ================== Generación (LLM si listo; si no, instantáneo) ==================
 async function generateOneProblem(op, level, locale, preferLLM = (USE_LLM && llmReady)) {
+  // Para 'frac' y 'seq', siempre generamos local (más seguro/consistente)
+  if (op === "frac" || op === "seq") return problemFor(op, level, locale);
+
   if (!preferLLM || !text2text) return problemFor(op, level, locale);
   const { maxNum, carryBorrowBias } = levelConfig(op, level);
   const want = Math.random() < carryBorrowBias;
   const [a, b] = makeOperands(op, { maxNum, wantCarryBorrow: want });
   try {
     const out = await text2text(
-      `Return ONLY JSON for ONE problem.
+`Return ONLY JSON for ONE problem.
 {"problems":[{"id":"${nowId("p")}","op":"${op}","a":${a},"b":${b},"questionText":"${locale==="es"?"¿Cuánto es":"What is"} ${a} ${sym[op]} ${b}?","difficulty":"fácil","solution":${computeSolution(op,a,b,{integerDiv:true})},"steps":[]}]}
 `,
       { max_new_tokens: 64, do_sample: false }
@@ -321,7 +544,6 @@ app.post("/session/start", (req, res) => {
   const state = newSession(op);
   sessions.set(id, state);
 
-  // Precarga (no bloquea la respuesta)
   const locale = String(req.body?.locale || "es");
   setImmediate(() => fillQueue(state, locale, QUEUE_TARGET, /*preferLLM*/ false).catch(() => {}));
 
@@ -337,7 +559,6 @@ app.post("/session/next", async (req, res) => {
 
   if (isOp(req.body?.op)) sess.op = req.body.op;
 
-  // 1) Usa prefetched si hay
   if (sess.nextPrefetchedProblem) {
     const prob = sess.nextPrefetchedProblem;
     sess.lastProblem = prob;
@@ -346,7 +567,6 @@ app.post("/session/next", async (req, res) => {
     return res.json({ problem: prob, state: { op: sess.op, level: sess.level, streak: sess.streak, correct: sess.correct, wrong: sess.wrong } });
   }
 
-  // 2) Toma de cola o genera instantáneo (fallback si LLM no está listo)
   const prob = await takeFromQueueOrGenerate(sess, locale);
   sess.lastProblem = prob;
   setImmediate(() => fillQueue(sess, locale, QUEUE_TARGET, false).catch(() => {}));
@@ -357,25 +577,40 @@ app.post("/session/next", async (req, res) => {
 // Calificar + prefetch inmediato del siguiente
 app.post("/session/grade", async (req, res) => {
   const sessionId = String(req.body?.sessionId || "");
-  const userAnswer = coerceInt(req.body?.userAnswer);
+  const userAnswerRaw = req.body?.userAnswer;
   const locale = String(req.body?.locale || "es");
   const sess = sessions.get(sessionId);
   if (!sess || !sess.lastProblem)
     return res.status(400).json({ error: "Invalid session or no last problem" });
 
   const { op, a, b, solution } = sess.lastProblem;
-  const correct = userAnswer === solution;
+
+  // ¿Es fracción? (op frac o solution con {n,d})
+  const isFraction = (op === "frac" || (solution && typeof solution === "object" &&
+                        Number.isFinite(solution.n) && Number.isFinite(solution.d)));
+
+  let correct = false;
+  if (isFraction) {
+    const expected = solution; // {n,d}
+    const got = parseUserFraction(userAnswerRaw);
+    correct = !!(expected && got && equalFrac(expected, got));
+  } else {
+    const userAnswer = coerceInt(userAnswerRaw);
+    correct = userAnswer === solution;
+  }
 
   const messages = {
     es: {
       ok: "¡Excelente! Respuesta correcta.",
-      bad: `Casi. ${a} ${sym[op]} ${b} = ${solution}.`,
+      badNum: `Casi. ${a} ${sym[op]} ${b} = ${solution}.`,
+      badFrac: `Casi. La respuesta es ${fracToString(solution)}.`,
       up: "Subiremos un poco la dificultad.",
       down: "Practica: trabaja paso a paso y revisa tus operaciones.",
     },
     en: {
       ok: "Great job! Correct answer.",
-      bad: `Almost. ${a} ${sym[op]} ${b} = ${solution}.`,
+      badNum: `Almost. ${a} ${sym[op]} ${b} = ${solution}.`,
+      badFrac: `Almost. The answer is ${fracToString(solution)}.`,
       up: "We will increase the difficulty a bit.",
       down: "Practice step by step and check your operations.",
     },
@@ -384,26 +619,33 @@ app.post("/session/grade", async (req, res) => {
 
   updateLevel(sess, correct);
 
-  const nextHint = correct ? M.up : (op === "add"
-    ? (locale === "es" ? "Suma unidades; si ≥10, lleva 1." : "Add ones; if ≥10, carry 1.")
-    : op === "sub"
-    ? (locale === "es" ? "Si no alcanzan unidades, pide prestado." : "If ones too small, borrow.")
-    : op === "mul"
-    ? (locale === "es" ? "Multiplica por columnas y suma parciales." : "Multiply columns; add partials.")
-    : (locale === "es" ? "Divide y toma cociente entero." : "Divide and take integer quotient.")
-  );
+  const nextHint = correct ? M.up
+    : (op === "add"
+      ? (locale === "es" ? "Suma unidades; si ≥10, lleva 1." : "Add ones; if ≥10, carry 1.")
+      : op === "sub"
+      ? (locale === "es" ? "Si no alcanzan unidades, pide prestado." : "If ones too small, borrow.")
+      : op === "mul"
+      ? (locale === "es" ? "Multiplica por columnas y suma parciales." : "Multiply columns; add partials.")
+      : op === "div"
+      ? (locale === "es" ? "Divide y toma cociente entero." : "Divide and take integer quotient.")
+      : op === "frac"
+      ? (locale === "es" ? "Usa m.c.m. o extremos y medios; simplifica." : "Find common denominator or multiply across; simplify.")
+      : /* seq */
+        (locale === "es"
+          ? "Identifica diferencia o razón; aplica la fórmula correspondiente."
+          : "Identify common difference or ratio; apply the right formula.")
+    );
 
-  // Prefetch del siguiente (instantáneo, sin bloquear)
   const nextProblem = await takeFromQueueOrGenerate(sess, locale);
   sess.nextPrefetchedProblem = nextProblem;
   setImmediate(() => fillQueue(sess, locale, QUEUE_TARGET, false).catch(() => {}));
 
   res.json({
     correct,
-    expected: solution,
-    feedback: correct ? M.ok : M.bad,
+    expected: isFraction ? fracToString(solution) : solution,
+    feedback: correct ? M.ok : (isFraction ? M.badFrac : M.badNum),
     nextHint,
-    nextProblemPreview: nextProblem, // la UI puede mostrarlo sin otro round-trip
+    nextProblemPreview: nextProblem,
     state: { op: sess.op, level: sess.level, streak: sess.streak, correct: sess.correct, wrong: sess.wrong },
   });
 });
@@ -415,7 +657,13 @@ app.post("/generate", async (req, res) => {
   const locale = String(req.body?.locale || "es");
   const level = clamp(coerceInt(req.body?.level ?? 1, 1), 1, 5);
 
-  // Si LLM no está listo, respondemos inmediato con fallback
+  // Para 'frac' y 'seq', generamos local sí o sí:
+  if (op === "frac" || op === "seq") {
+    const out = [];
+    for (let i = 0; i < count; i++) out.push(problemFor(op, level, locale));
+    return res.json({ problems: out });
+  }
+
   if (!USE_LLM || !llmReady || !text2text) {
     return res.json(fallbackProblems(count, op, level, locale));
   }
@@ -429,6 +677,29 @@ app.post("/generate", async (req, res) => {
 app.post("/grade", (req, res) => {
   const { op: opIn, a, b, userAnswer, locale = 'es' } = req.body || {};
   const op = isOp(opIn) ? opIn : "add";
+
+  if (op === "frac") {
+    // Alias no conoce el problema real; solo ilustra validación de una respuesta tipo
+    const example = problemFor("frac", 1, locale);
+    const got = parseUserFraction(userAnswer);
+    const correct = example && got && equalFrac(example.solution, got);
+    const feedback = correct
+      ? (locale === "es" ? "¡Excelente! Respuesta correcta." : "Great job! Correct answer.")
+      : (locale === "es" ? `Casi. Ejemplo de respuesta: ${fracToString(example.solution)}.` : `Almost. Example answer: ${fracToString(example.solution)}.`);
+    return res.json({ op, correct, expected: fracToString(example.solution), feedback, nextHint: "" });
+  }
+
+  if (op === "seq") {
+    // Alias simple: genera un ejemplo y evalúa contra él (no adaptativo)
+    const ex = problemFor("seq", 1, locale);
+    const UA = coerceInt(userAnswer);
+    const correct = UA === ex.solution;
+    const feedback = correct
+      ? (locale === "es" ? "¡Excelente! Respuesta correcta." : "Great job! Correct answer.")
+      : (locale === "es" ? `Casi. La respuesta era ${ex.solution}.` : `Almost. The answer was ${ex.solution}.`);
+    return res.json({ op, correct, expected: ex.solution, feedback, nextHint: "" });
+  }
+
   let A = coerceInt(a), B = coerceInt(b), UA = coerceInt(userAnswer);
   if (op === "sub" && A < B) [A, B] = [B, A];
   if (op === "div") B = Math.max(1, B || 1);
@@ -443,6 +714,5 @@ app.post("/grade", (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🧠 Backend en http://localhost:${PORT} | useLLM=${USE_LLM} | llmReady=${llmReady} | QUEUE_TARGET=${QUEUE_TARGET}`);
-  // Cargar LLM en background (no bloquea el arranque)
   setImmediate(loadLLM);
 });
