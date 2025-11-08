@@ -1,12 +1,20 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TextInput, Image, Pressable } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  TouchableOpacity,
+  TextInput,
+  Image,
+  Pressable,
+} from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
-import LinearGradient from 'react-native-linear-gradient'; // Importa LinearGradient
+import LinearGradient from 'react-native-linear-gradient';
 import { ScrollView } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
-import { Multiplication } from './Multiplication';
-const { width } = Dimensions.get('window'); // Ancho de la pantalla
-const { height } = Dimensions.get('window'); // Altura de la pantalla
+
+const { width, height } = Dimensions.get('window');
 
 export const HomeScreen = () => {
   const data = [
@@ -19,256 +27,273 @@ export const HomeScreen = () => {
   ];
 
   const categorias = [
-    { id: 1, title: 'Series', color: 'rgba(37, 53, 71, 0.8)', image: <Image source={require('../../assets/images/series.png')} style={styles.iconSuma}/>},
-    { id: 2, title: 'Suma', color: 'rgba(29, 74, 59, 0.72)', image: <Image source={require('../../assets/images/suma.png')} style={styles.iconCategory}/> },
-    { id: 3, title: 'Resta', color: 'rgb(232,186,97)', image: <Image source={require('../../assets/images/resta.png')} style={styles.iconCategory}/> },
-    { id: 4, title: 'Multiplicación', color: 'rgb(236, 196, 116)', image: <Image source={require('../../assets/images/multiplicación.png')} style={styles.iconDivision}/> },
-    { id: 5, title: 'División', color: 'rgba(29, 74, 59, 0.62)', image: <Image source={require('../../assets/images/división.png')} style={styles.iconTutor}/> },
-    { id: 6, title: 'Fracciones', color: 'rgba(29, 74, 59, 0.88)', image: <Image source={require('../../assets/images/fracciones.png')} style={styles.iconTutor}/> },
+    { id: 1, title: 'Series',          color: 'rgba(37, 53, 71, 1)', image: require('../../assets/images/series.png') },
+    { id: 2, title: 'Suma',            color: 'rgba(29, 74, 59, 1)', image: require('../../assets/images/suma.png') },
+    { id: 3, title: 'Resta',           color: 'rgb(232,186,97)',     image: require('../../assets/images/resta.png') },
+    { id: 4, title: 'Multiplicación',  color: 'rgb(232,186,97)',     image: require('../../assets/images/multiplicación.png') },
+    { id: 5, title: 'División',        color: 'rgba(29, 74, 59, 1)', image: require('../../assets/images/división.png') },
+    { id: 6, title: 'Fracciones',      color: 'rgba(37, 53, 71, 1)', image: require('../../assets/images/fracciones.png') },
   ];
 
-  const [activeCategory, setActiveCategory] = useState(Number);
-  const navigation = useNavigation();
+  const [activeCategory, setActiveCategory] = useState<number | null>(null);
+  const navigation = useNavigation<any>();
+
+  const handleNavigate = (title: string) => {
+    if (title === 'Series')           navigation.navigate('Series');
+    else if (title === 'Suma')        navigation.navigate('Addition');
+    else if (title === 'Resta')       navigation.navigate('Subtraction');
+    else if (title === 'Multiplicación') navigation.navigate('Multiplication');
+    else if (title === 'División')    navigation.navigate('Division');
+    else if (title === 'Fracciones')  navigation.navigate('Fractions');
+  };
+
   return (
     <View style={styles.container}>
-      {/* Degradado solo en la parte superior */}
+      {/* Header con degradado */}
       <LinearGradient
-      colors={['rgb(37, 53, 71)','rgba(29, 74, 59, 0.72)']}
-      start={{ x: 0, y: 0 }} // Comienza en la parte superior izquierda
-      end={{ x: 1, y: 1 }} // Termina en la parte inferior derecha
-      style={styles.gradient}
-    >
-      <Text style={styles.header}>DysMathAI</Text>
-      <View style={styles.buscarContainer}>
-        <Image
-                    source={require('../../assets/images/search.png')}
-                    style={styles.icon}
-                  />
-        <TextInput style={styles.buscar} placeholder="Buscar"/>
-      </View>
-    </LinearGradient>
+        colors={['rgb(37, 53, 71)', 'rgba(29, 74, 59, 0.72)']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradient}
+      >
+        <Text style={styles.header}>DysMathAI</Text>
+        <View style={styles.buscarContainer}>
+          <Image source={require('../../assets/images/search.png')} style={styles.icon} />
+          <TextInput style={styles.buscar} placeholder="Buscar" />
+        </View>
+      </LinearGradient>
 
+      {/* Arco blanco que “muerde” el degradado */}
+      <View style={styles.arc} />
 
       {/* Carrusel */}
       <Carousel
         loop
-        width={width * 0.90} // Ancho del carrusel (90% de la pantalla)
-        height={200} // Altura de las tarjetas
-        autoPlay={true}
+        width={width * 0.9}
+        height={200}
+        autoPlay
         data={data}
         scrollAnimationDuration={1000}
         renderItem={({ item }) => (
-          <View style={[styles.card, { backgroundColor: item.color }]} >
+          <View style={[styles.card, { backgroundColor: item.color }]}>
             <Text style={styles.cardText}>{item.title}</Text>
           </View>
         )}
         style={styles.carousel}
       />
 
-        <ScrollView style={styles.categoryMenu}
-          contentContainerStyle={{ paddingHorizontal: 20 }}
-          horizontal
-          showsHorizontalScrollIndicator={false} 
+      {/* Menú horizontal */}
+      <ScrollView
+        style={styles.categoryMenu}
+        contentContainerStyle={{ paddingHorizontal: 20 }}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+      >
+        {categorias.map((categoria) => (
+          <TouchableOpacity
+            key={categoria.id}
+            style={[
+              styles.menuCircle,
+              { backgroundColor: activeCategory === categoria.id ? '#e8ba61' : '#f3ebdf' },
+            ]}
+            onPress={() => setActiveCategory(categoria.id)}
           >
-          {
-            categorias.map((categoria) => (
-              <TouchableOpacity
-              key={categoria.id}
-              style={[
-                styles.menuCircle,
-                { backgroundColor: activeCategory === categoria.id ? '#e8ba61' : '#f3ebdf' }, // Cambia el color dinámicamente
-              ]}
-              onPress={() => setActiveCategory(categoria.id)} // Actualiza la categoría activa
-            >
-              <Text style={styles.menuText}>{categoria.title}</Text>
-            </TouchableOpacity>
-            ))
-          }
-        </ScrollView>
+            <Text style={styles.menuText}>{categoria.title}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
 
       {/* Categorías */}
-        <Text style={styles.categoriesHeader}>Categorías</Text>
-        <View style={styles.categoriesContainer}>
-        <View style={styles.categoriesContainer}>
-        {/* Primera fila: 3 tarjetas */}
+      <Text style={styles.categoriesHeader}>Categorías</Text>
+
+      <View style={styles.categoriesContainer}>
+        {/* Fila 1 */}
         <View style={styles.row}>
-          {categorias.slice(0, 3).map((categoria) => (
-            <Pressable key={categoria.id}  style={[styles.cardCategories, { backgroundColor: categoria.color }]}
-            onPress={() => {
-              // Navega según la categoría
-              if (categoria.title === 'Series') {
-                navigation.navigate('Series' as never);// Navega a la pantalla de Suma
-              }else if(categoria.title == 'Suma'){
-                navigation.navigate('Addition' as never);
-              }else if(categoria.title == 'Resta'){
-                navigation.navigate('Subtraction' as never);
-              } 
-            }}
-          >
+          {categorias.slice(0, 3).map((c) => (
+            <Pressable
+              key={c.id}
+              style={[styles.cardCategories, { backgroundColor: c.color }]}
+              onPress={() => handleNavigate(c.title)}
+            >
               <View style={styles.circle} />
-              {categoria.image}
-              <Text style={styles.cardTextCategories}>{categoria.title}</Text>
+              <Image source={c.image} style={styles.iconCategory} resizeMode="contain" />
+              <Text style={styles.cardTextCategories}>{c.title}</Text>
             </Pressable>
           ))}
         </View>
 
-        {/* Segunda fila: 2 tarjetas */}
+        {/* Fila 2 */}
         <View style={styles.row}>
-          {categorias.slice(3, 6).map((categoria) => (
-            <Pressable key={categoria.id}  style={[styles.cardCategories, { backgroundColor: categoria.color }]}
-            onPress={() => {
-              if (categoria.title === 'Multiplicación') {
-                navigation.navigate('Multiplication' as never);// Navega a la pantalla de Suma
-              }else if(categoria.title === 'División') { 
-                navigation.navigate('Division' as never);
-              }else if(categoria.title === 'Fracciones'){
-                navigation.navigate('Fractions' as never)
-              }
-            }}
+          {categorias.slice(3, 6).map((c) => (
+            <Pressable
+              key={c.id}
+              style={[styles.cardCategories, { backgroundColor: c.color }]}
+              onPress={() => handleNavigate(c.title)}
             >
               <View style={styles.circle} />
-              {categoria.image}
-              <Text style={styles.cardTextCategories}>{categoria.title}</Text>
+              <Image
+                source={c.image}
+                style={c.title === 'Fracciones' ? styles.iconFraccion : styles.iconCategory}
+                resizeMode="contain"
+              />
+              <Text style={styles.cardTextCategories}>{c.title}</Text>
             </Pressable>
           ))}
         </View>
-      </View>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  // Layout base
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    justifyContent: 'flex-start', // Asegura que los elementos se alineen desde la parte superior
     alignItems: 'center',
-    height: height,
-    paddingTop: 20, // Ajuste para que el contenido no quede pegado al borde superior
+    height,
   },
+
+  // Header con gradiente
   gradient: {
     width: '100%',
-    height: 250, // Solo la parte superior tendrá el degradado
-    position: 'absolute', // Lo coloca sobre la parte superior de la pantalla
+    height: 350,
+    position: 'absolute',
     top: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    borderBottomLeftRadius: 40,
-    borderBottomRightRadius: 40,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    overflow: 'visible',     // que no recorte el arco
+    zIndex: 0,
   },
+
+  // Arco blanco
+  arc: {
+    position: 'absolute',
+    top: 250,                // ajusta para mover el arco
+    alignSelf: 'center',
+    width: width * 2,        // grande para cubrir todo
+    height: width * 2,
+    borderRadius: width,     // círculo perfecto
+    backgroundColor: '#fff',
+    zIndex: 0,
+  },
+
   header: {
     fontSize: 35,
     fontWeight: 'bold',
     color: '#fff',
     fontFamily: 'Poppins',
-    marginTop: '20%',
+    zIndex: 2,
   },
+
+  // Carrusel
   carousel: {
     alignSelf: 'center',
-    marginTop: 150, // Deja espacio para el encabezado y el degradado
+    marginTop: 170,          // empuja debajo del arco
+    zIndex: 2,
   },
   card: {
-    width: '100%', // Las tarjetas ocupan todo el ancho del carrusel
-    height: '100%', // Se ajusta al alto del carrusel
+    width: '100%',
+    height: '100%',
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  cardText: {
-    fontSize: 18,
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  categoriesHeader: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    paddingBottom: 30
-  },
+  cardText: { fontSize: 18, color: '#fff', fontWeight: 'bold' },
+
+  // Categorías
+  categoriesHeader: { fontSize: 20, fontWeight: 'bold', paddingBottom: 30 },
   categoriesContainer: {
-    flexDirection: 'column', // Organiza las filas en columna
-    alignItems: 'center', // Centra las filas horizontalmente
-    width: '100%', // Asegura que el contenedor ocupe todo el ancho
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: '100%',
     marginBottom: 15,
   },
   row: {
-    flexDirection: 'row', // Las tarjetas de cada fila se colocan en fila
-    justifyContent: 'space-between', // Espacia las tarjetas uniformemente
-    width: '90%', // Ancho de la fila
-    marginBottom: 20, // Espacio entre filas
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '90%',
+    marginBottom: 30,
   },
   cardCategories: {
-    width: '30%', // Cada tarjeta ocupa el 30% del ancho (ideal para 3 tarjetas por fila)
-    height: 120, // Altura de las tarjetas
+    width: '30%',
+    height: 120,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 10,
-  },  
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    overflow: 'visible',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
+  },
   cardTextCategories: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#fff',
-    fontWeight: 'bold',
-    marginBottom: 20,
+    fontWeight: '700',
+    marginBottom: 18,
   },
+
+  // círculo detrás del ícono
   circle: {
-    width: 100, // Ancho del círculo (más grande)
-    height: 100, // Altura del círculo (más grande)
-    borderRadius: 50, // La mitad del ancho/alto para mantener la forma circular
-    backgroundColor: '#fff', // Color del círculo
-    position: 'absolute', // Posiciona el círculo sobre la tarjeta
-    top: -20, // Coloca el círculo por encima de la tarjeta
-    alignSelf: 'center', // Centra el círculo horizontalmente en la tarjeta
-    borderWidth: 3, // Borde opcional para destacar el círculo
-    borderColor: '#f3ebdf', // Color del borde
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#f3ebdf',
+    position: 'absolute',
+    top: -20,
+    alignSelf: 'center',
+    borderWidth: 3,
+    borderColor: '#f3ebdf',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  buscar: {
-    fontSize: 20,
-    paddingLeft: 15, // Espacio para el texto
-    flex: 1, // Hace que el input ocupe el espacio disponible
-  },
+
+  // buscador
+  buscar: { fontSize: 20, paddingLeft: 15, flex: 1 },
   buscarContainer: {
     marginBottom: '35%',
     backgroundColor: '#f3ebdf',
     borderRadius: 50,
     marginTop: 20,
     width: '90%',
-    height: 50, // Ajusta la altura del contenedor
+    height: 50,
     paddingLeft: 15,
-    flexDirection: 'row', // Coloca el ícono y el input en fila
-    alignItems: 'center', // Centra el ícono y el input verticalmente
-    zIndex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 2,
   },
-  icon: {
-    width: 30,
-    height: 30,// Añade espacio entre el ícono y el TextInput
-  },
+  icon: { width: 30, height: 30 },
+
+  // íconos
   iconCategory: {
-    width: '70%',
-    height: '70%',// Añade espacio entre el ícono y el TextInput
-    marginBottom: 10,
+    width: 70,
+    height: 70,
+    marginBottom: 6,
+    resizeMode: 'contain',
   },
-  iconSuma: {
-    width: '40%',
-    height: '60%',
-    padding: 45,
+  iconFraccion: {
+    width: 70,
+    height: 70,
+    marginBottom: 6,
+    resizeMode: 'contain',
   },
-  iconDivision: {
-    width: '60%',
-    height: '60%',
-    marginBottom: 20,
-  },
-  iconTutor: {
-    width: '60%',
-    height: '60%',
-    marginBottom: 20,
-  },
+
+  // menú horizontal
   categoryMenu: {
-    marginTop: '70%',
+    marginTop: '78%',
     marginHorizontal: 15,
     marginLeft: 5,
     marginRight: 25,
   },
-  menuText:{
+  menuText: {
     fontWeight: 'bold',
     fontSize: 15,
     textAlign: 'center',
@@ -276,10 +301,10 @@ const styles = StyleSheet.create({
     paddingTop: 15,
   },
   menuCircle: {
-    width: 120, 
-    height: 50, 
-    backgroundColor: '#f3ebdf', // Color del círculo
+    width: 120,
+    height: 50,
+    backgroundColor: '#f3ebdf',
     borderRadius: 20,
     marginLeft: 20,
-  }
+  },
 });
