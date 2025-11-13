@@ -69,7 +69,7 @@ const menuIcons = (route: any, focused: boolean) => {
           style={styles.iconStyle}
         />
     );
-  } else {
+  } else if(route.name === 'HomeScreen') {
     icon = focused ? (
       <Animated.View
         style={[styles.circleStyle, { transform: [{ scale }, { translateY }] }]}>
@@ -84,8 +84,22 @@ const menuIcons = (route: any, focused: boolean) => {
           style={styles.iconStyle}
         />
     );
+  }else{
+    icon = focused ? (
+      <Animated.View
+        style={[styles.circleStyle, { transform: [{ scale }, { translateY }] }]}>
+        <Image
+          source={require('../assets/images/menu-active.png')}
+          style={styles.iconStyle}
+        />
+      </Animated.View>
+    ) : (
+        <Image
+          source={require('../assets/images/menu.png')}
+          style={styles.iconStyle}
+        />
+    );
   }
-
   return <View>{icon}</View>;
 };
 

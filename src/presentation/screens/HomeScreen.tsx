@@ -17,41 +17,47 @@ import { useNavigation } from '@react-navigation/native';
 const { width, height } = Dimensions.get('window');
 
 export const HomeScreen = () => {
-  const data = [
-    { id: 1, title: 'Card 1', color: '#FF5733' },
-    { id: 2, title: 'Card 2', color: '#33FF57' },
-    { id: 3, title: 'Card 3', color: '#3357FF' },
-    { id: 4, title: 'Card 4', color: '#F5A623' },
-    { id: 5, title: 'Card 5', color: '#33FF57' },
-    { id: 6, title: 'Card 6', color: '#33FF57' },
+  type CarouselItem = {
+    id: number;
+    image?: any;
+    color?: string;
+  };
+
+  const data: CarouselItem[] = [
+    { id: 1, image: require('../../assets/images/carrusel1.png') },
+    { id: 2, image: require('../../assets/images/carrusel2.png') },
+    { id: 3, image: require('../../assets/images/carrusel3.png') },
+    { id: 4, image: require('../../assets/images/carrusel1.png') },
+    { id: 5, color: '#f3ebdf' },
+    { id: 6, color: '#f3ebdf' },
   ];
 
   const categorias = [
-    { id: 1, title: 'Series',          color: 'rgba(37, 53, 71, 1)', image: require('../../assets/images/series.png') },
-    { id: 2, title: 'Suma',            color: 'rgba(29, 74, 59, 1)', image: require('../../assets/images/suma.png') },
-    { id: 3, title: 'Resta',           color: 'rgb(232,186,97)',     image: require('../../assets/images/resta.png') },
-    { id: 4, title: 'Multiplicación',  color: 'rgb(232,186,97)',     image: require('../../assets/images/multiplicación.png') },
-    { id: 5, title: 'División',        color: 'rgba(29, 74, 59, 1)', image: require('../../assets/images/división.png') },
-    { id: 6, title: 'Fracciones',      color: 'rgba(37, 53, 71, 1)', image: require('../../assets/images/fracciones.png') },
+    { id: 1, title: 'Series', color: 'rgba(37, 53, 71, 1)', image: require('../../assets/images/series.png') },
+    { id: 2, title: 'Suma', color: 'rgba(29, 74, 59, 1)', image: require('../../assets/images/suma.png') },
+    { id: 3, title: 'Resta', color: 'rgb(232,186,97)', image: require('../../assets/images/resta.png') },
+    { id: 4, title: 'Multiplicación', color: 'rgb(232,186,97)', image: require('../../assets/images/multiplicación.png') },
+    { id: 5, title: 'División', color: 'rgba(29, 74, 59, 1)', image: require('../../assets/images/división.png') },
+    { id: 6, title: 'Fracciones', color: 'rgba(37, 53, 71, 1)', image: require('../../assets/images/fracciones.png') },
   ];
 
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const navigation = useNavigation<any>();
 
   const handleNavigate = (title: string) => {
-    if (title === 'Series')           navigation.navigate('Series');
-    else if (title === 'Suma')        navigation.navigate('Addition');
-    else if (title === 'Resta')       navigation.navigate('Subtraction');
+    if (title === 'Series') navigation.navigate('Series');
+    else if (title === 'Suma') navigation.navigate('Addition');
+    else if (title === 'Resta') navigation.navigate('Subtraction');
     else if (title === 'Multiplicación') navigation.navigate('Multiplication');
-    else if (title === 'División')    navigation.navigate('Division');
-    else if (title === 'Fracciones')  navigation.navigate('Fractions');
+    else if (title === 'División') navigation.navigate('Division');
+    else if (title === 'Fracciones') navigation.navigate('Fractions');
   };
 
   return (
     <View style={styles.container}>
       {/* Header con degradado */}
       <LinearGradient
-        colors={['rgb(37, 53, 71)', 'rgba(29, 74, 59, 0.72)']}
+        colors={['#253547', '#1d4a3b']} // paleta ajustada
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradient}
@@ -59,7 +65,7 @@ export const HomeScreen = () => {
         <Text style={styles.header}>DysMathAI</Text>
         <View style={styles.buscarContainer}>
           <Image source={require('../../assets/images/search.png')} style={styles.icon} />
-          <TextInput style={styles.buscar} placeholder="Buscar" />
+          <TextInput style={styles.buscar} placeholder="Buscar" placeholderTextColor="#666" />
         </View>
       </LinearGradient>
 
@@ -75,8 +81,10 @@ export const HomeScreen = () => {
         data={data}
         scrollAnimationDuration={1000}
         renderItem={({ item }) => (
-          <View style={[styles.card, { backgroundColor: item.color }]}>
-            <Text style={styles.cardText}>{item.title}</Text>
+          <View style={styles.cardWrapper}>
+            <View style={[styles.cardInner, !item.image && { backgroundColor: item.color || '#f3ebdf' }]}>
+                <Image source={item.image} style={styles.cardImage} resizeMode="cover" />
+            </View>
           </View>
         )}
         style={styles.carousel}
@@ -131,11 +139,7 @@ export const HomeScreen = () => {
               onPress={() => handleNavigate(c.title)}
             >
               <View style={styles.circle} />
-              <Image
-                source={c.image}
-                style={c.title === 'Fracciones' ? styles.iconFraccion : styles.iconCategory}
-                resizeMode="contain"
-              />
+              <Image source={c.image} style={styles.iconCategory} resizeMode="contain" />
               <Text style={styles.cardTextCategories}>{c.title}</Text>
             </Pressable>
           ))}
@@ -157,59 +161,79 @@ const styles = StyleSheet.create({
   // Header con gradiente
   gradient: {
     width: '100%',
-    height: 350,
+    height: 380, // aumentado para subir header/buscador/carrusel
     position: 'absolute',
     top: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    overflow: 'visible',     // que no recorte el arco
+    borderBottomLeftRadius: 0, // quitamos borderBottom para usar arco
+    borderBottomRightRadius: 0,
+    overflow: 'visible',
     zIndex: 0,
   },
 
-  // Arco blanco
+  // Arco blanco (recorta la parte inferior del gradiente)
   arc: {
     position: 'absolute',
-    top: 250,                // ajusta para mover el arco
+    top: 250, // mueve el arco según height del gradiente
     alignSelf: 'center',
-    width: width * 2,        // grande para cubrir todo
+    width: width * 2,
     height: width * 2,
-    borderRadius: width,     // círculo perfecto
+    borderRadius: width,
     backgroundColor: '#fff',
     zIndex: 0,
   },
 
   header: {
-    fontSize: 35,
+    fontSize: 36,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#f3ebdf',
     fontFamily: 'Poppins',
+    marginTop: -200,
     zIndex: 2,
   },
 
   // Carrusel
   carousel: {
     alignSelf: 'center',
-    marginTop: 170,          // empuja debajo del arco
-    zIndex: 2,
+    marginTop: 160, // empuja debajo del arco (ajusta si cambias arc.top)
+    zIndex: 3
   },
-  card: {
+
+  // card wrapper + inner para borderRadius + sombra
+  // estilos relevantes (reemplaza los que tienes)
+cardWrapper: {
+  width: '100%',
+  height: 200,
+  marginVertical: 8,
+  // sombra (wrapper) — NO poner overflow: 'hidden' aquí
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.12,
+  shadowRadius: 10,
+  elevation: 6,
+  overflow: 'visible',
+},
+cardInner: {
+  flex: 1,// recorte aplicado al contenedor interior
+  overflow: 'hidden', // IMPORTANT: recorta la image en iOS/Android
+  backgroundColor: '#f3ebdf',
+  justifyContent: 'center',
+  alignItems: 'center',
+  borderRadius: 16,
+},
+  cardImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardText: { fontSize: 18, color: '#fff', fontWeight: 'bold' },
-
+    resizeMode: 'cover',
+},
   // Categorías
-  categoriesHeader: { fontSize: 20, fontWeight: 'bold', paddingBottom: 30 },
+  categoriesHeader: { fontSize: 20, fontWeight: 'bold', paddingBottom: 40, marginTop: 10 },
   categoriesContainer: {
     flexDirection: 'column',
     alignItems: 'center',
     width: '100%',
-    marginBottom: 15,
+    marginBottom: 20,
   },
   row: {
     flexDirection: 'row',
@@ -227,15 +251,16 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.12,
     shadowRadius: 5,
-    elevation: 5,
+    elevation: 4,
+    zIndex: 3,
   },
   cardTextCategories: {
     fontSize: 16,
     color: '#fff',
     fontWeight: '700',
-    marginBottom: 18,
+    marginBottom: 8,
   },
 
   // círculo detrás del ícono
@@ -251,44 +276,38 @@ const styles = StyleSheet.create({
     borderColor: '#f3ebdf',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.12,
     shadowRadius: 4,
     elevation: 2,
+    zIndex: 0
   },
 
   // buscador
-  buscar: { fontSize: 20, paddingLeft: 15, flex: 1 },
+  buscar: { fontSize: 18, paddingLeft: 15, flex: 1, color: '#253547' },
   buscarContainer: {
-    marginBottom: '35%',
+    marginBottom: 8,
     backgroundColor: '#f3ebdf',
     borderRadius: 50,
-    marginTop: 20,
+    marginTop: 18,
     width: '90%',
-    height: 50,
+    height: 48,
     paddingLeft: 15,
     flexDirection: 'row',
     alignItems: 'center',
     zIndex: 2,
   },
-  icon: { width: 30, height: 30 },
+  icon: { width: 28, height: 28, tintColor: '#253547' },
 
   // íconos
   iconCategory: {
     width: 70,
     height: 70,
-    marginBottom: 6,
+    marginBottom: 20,
     resizeMode: 'contain',
   },
-  iconFraccion: {
-    width: 70,
-    height: 70,
-    marginBottom: 6,
-    resizeMode: 'contain',
-  },
-
   // menú horizontal
   categoryMenu: {
-    marginTop: '78%',
+    marginTop: 370,
     marginHorizontal: 15,
     marginLeft: 5,
     marginRight: 25,
@@ -306,5 +325,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f3ebdf',
     borderRadius: 20,
     marginLeft: 20,
+    zIndex: 0
   },
 });
