@@ -54,53 +54,32 @@ const menuIcons = (route: any, focused: boolean) => {
   }, [focused, scale, translateY]); // Añadir dependencias para animaciones
 
   let icon;
-  if (route.name === 'HomeScreen') {
-    icon = focused ? (
-      <Animated.View
-        style={[styles.circleStyle, { transform: [{ scale }, { translateY }] }]}>
-        <Image
-          source={require('../assets/images/home-active.png')}
-          style={styles.iconStyle}
-        />
-      </Animated.View>
-    ) : (
-        <Image
-          source={require('../assets/images/home.png')}
-          style={styles.iconStyle}
-        />
-    );
-  } else if(route.name === 'HomeScreen') {
-    icon = focused ? (
-      <Animated.View
-        style={[styles.circleStyle, { transform: [{ scale }, { translateY }] }]}>
-        <Image
-          source={require('../assets/images/home-active.png')}
-          style={styles.iconStyle}
-        />
-      </Animated.View>
-    ) : (
-        <Image
-          source={require('../assets/images/home.png')}
-          style={styles.iconStyle}
-        />
-    );
-  }else{
-    icon = focused ? (
-      <Animated.View
-        style={[styles.circleStyle, { transform: [{ scale }, { translateY }] }]}>
-        <Image
-          source={require('../assets/images/menu-active.png')}
-          style={styles.iconStyle}
-        />
-      </Animated.View>
-    ) : (
-        <Image
-          source={require('../assets/images/menu.png')}
-          style={styles.iconStyle}
-        />
-    );
-  }
-  return <View>{icon}</View>;
+  if (route.name === 'Addition') { // <- quitar espacio inicial
+  icon = focused ? (
+    <Animated.View style={[styles.circleStyle, { transform: [{ scale }, { translateY }] }]}>
+      <Image source={require('../assets/images/menu-active.png')} style={styles.iconStyle} />
+    </Animated.View>
+  ) : (
+    <Image source={require('../assets/images/menu.png')} style={styles.iconStyle} />
+  );
+} else if (route.name === 'HomeScreen') {
+  icon = focused ? (
+    <Animated.View style={[styles.circleStyle, { transform: [{ scale }, { translateY }] }]}>
+      <Image source={require('../assets/images/home-active.png')} style={styles.iconStyle} />
+    </Animated.View>
+  ) : (
+    <Image source={require('../assets/images/home.png')} style={styles.iconStyle} />
+  );
+} else {
+  icon = focused ? (
+    <Animated.View style={[styles.circleStyle, { transform: [{ scale }, { translateY }] }]}>
+      <Image source={require('../assets/images/menu-active.png')} style={styles.iconStyle} />
+    </Animated.View>
+  ) : (
+    <Image source={require('../assets/images/menu.png')} style={styles.iconStyle} />
+  );
+}
+return <View>{icon}</View>; 
 };
 
 const styles = StyleSheet.create({

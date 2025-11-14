@@ -20,16 +20,15 @@ export const HomeScreen = () => {
   type CarouselItem = {
     id: number;
     image?: any;
-    color?: string;
   };
 
   const data: CarouselItem[] = [
     { id: 1, image: require('../../assets/images/carrusel1.png') },
     { id: 2, image: require('../../assets/images/carrusel2.png') },
     { id: 3, image: require('../../assets/images/carrusel3.png') },
-    { id: 4, image: require('../../assets/images/carrusel1.png') },
-    { id: 5, color: '#f3ebdf' },
-    { id: 6, color: '#f3ebdf' },
+    { id: 4, image: require('../../assets/images/carrusel4.png') },
+    { id: 5, image: require('../../assets/images/carrusel5.png') },
+    { id: 6, image: require('../../assets/images/carrusel6.png') },
   ];
 
   const categorias = [
@@ -82,7 +81,7 @@ export const HomeScreen = () => {
         scrollAnimationDuration={1000}
         renderItem={({ item }) => (
           <View style={styles.cardWrapper}>
-            <View style={[styles.cardInner, !item.image && { backgroundColor: item.color || '#f3ebdf' }]}>
+            <View style={[styles.cardInner, item.image]}>
                 <Image source={item.image} style={styles.cardImage} resizeMode="cover" />
             </View>
           </View>
