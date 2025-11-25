@@ -37,7 +37,10 @@ export const Addition = () => {
   const [grading, setGrading] = useState(false);
   const [lastCorrect, setLastCorrect] = useState<boolean | null>(null);
 
-  // nuevos estados para stats y pistas
+  // nivel
+  const [currentLevel, setCurrentLevel] = useState<number>(1);
+
+  // stats y pista
   const [streak, setStreak] = useState(0);
   const [totalSolved, setTotalSolved] = useState(0);
   const [correctSolved, setCorrectSolved] = useState(0);
@@ -45,6 +48,25 @@ export const Addition = () => {
 
   const lastGradedProblemId = useRef<string | null>(null);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const applyStateFromBackend = (data: any) => {
+    // Ajusta estos paths según tu backend
+    const state = data?.state;
+    if (!state) return;
+
+    if (typeof state.level === 'number') {
+      setCurrentLevel(state.level);
+    }
+    if (typeof state.streak === 'number') {
+      setStreak(state.streak);
+    }
+    if (typeof state.correct === 'number') {
+      setCorrectSolved(state.correct);
+    }
+    if (typeof state.total === 'number') {
+      setTotalSolved(state.total);
+    }
+  };
 
   const start = async () => {
     try {
@@ -57,11 +79,15 @@ export const Addition = () => {
       setTotalSolved(0);
       setCorrectSolved(0);
       setShowHint(false);
+      setCurrentLevel(1);
 
       const s = await axios.post(`${API_URL}/session/start`, { op: 'add' });
       const sid = s.data?.sessionId;
       if (!sid) throw new Error('No sessionId from server');
       setSessionId(sid);
+
+      // estado inicial (si viene)
+      applyStateFromBackend(s.data);
 
       const n = await axios.post(`${API_URL}/session/next`, {
         sessionId: sid,
@@ -71,6 +97,9 @@ export const Addition = () => {
       const p = n.data?.problem;
       if (!p) throw new Error('No problem from server');
       setProblem(p);
+
+      // estado después de pedir el primer problema
+      applyStateFromBackend(n.data);
     } catch (e: any) {
       Alert.alert('Error', String(e?.message || e));
     } finally {
@@ -95,6 +124,9 @@ export const Addition = () => {
       setLastCorrect(null);
       lastGradedProblemId.current = null;
       setShowHint(false);
+
+      // actualizar nivel / stats si cambian
+      applyStateFromBackend(n.data);
     } catch (e: any) {
       Alert.alert('Error', String(e?.message || e));
     } finally {
@@ -117,12 +149,16 @@ export const Addition = () => {
       });
       const data = res.data;
 
-      // stats locales
+      // si el backend ya manda el estado actualizado (nivel, racha, etc.)
+      applyStateFromBackend(data);
+
+      // si no usas state.total/state.correct en el backend, mantenemos estos contadores locales
       setTotalSolved(t => t + 1);
 
       if (data.correct) {
         setFeedback(`¡Muy bien! ${data.feedback ?? ''}`);
         setLastCorrect(true);
+        // si no viene en el estado, lo mantenemos local
         setCorrectSolved(c => c + 1);
         setStreak(s => s + 1);
       } else {
@@ -188,11 +224,11 @@ export const Addition = () => {
       {/* BANNER SUPERIOR */}
       <View style={styles.banner}>
         <View>
-          <Text style={styles.appTitle}>DysMath AI</Text>
+          <Text style={styles.appTitle}>Sumas</Text>
           <Text style={styles.bannerText}>Practica sumas de forma divertida ✨</Text>
         </View>
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>+ Nivel 1</Text>
+          <Text style={styles.badgeText}>+ Nivel {currentLevel}</Text>
         </View>
       </View>
 
@@ -206,6 +242,10 @@ export const Addition = () => {
           {/* TARJETA PRINCIPAL */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Resuelve las siguientes sumas</Text>
+
+            <Text style={styles.helperText}>
+              {problem.questionText ?? `¿Cuánto es ${problem.a} + ${problem.b}?`}
+            </Text>
 
             {/* BURBUJA DE OPERACIÓN */}
             <View style={styles.operationContainer}>
@@ -224,11 +264,6 @@ export const Addition = () => {
                 onSubmitEditing={grade}
               />
             </View>
-
-            <Text style={styles.helperText}>
-              {problem.questionText ??
-                'Escribe el resultado en el cuadro blanco. Tu respuesta se revisa automáticamente.'}
-            </Text>
 
             {/* BOTÓN DE PISTA */}
             <View style={styles.hintRow}>
@@ -259,7 +294,12 @@ export const Addition = () => {
             {/* TIRA DE PROGRESO VISUAL */}
             <View style={styles.progressRow}>
               <View style={styles.progressTrack}>
-                <View style={[styles.progressFill, { width: `${Math.min(streak * 20, 100)}%` }]} />
+                <View
+                  style={[
+                    styles.progressFill,
+                    { width: `${Math.min(streak * 20, 100)}%` },
+                  ]}
+                />
               </View>
               <Text style={styles.progressLabel}>Practicando…</Text>
             </View>
@@ -285,6 +325,37 @@ export const Addition = () => {
           <View style={styles.mascotContainer}>
             <Text style={styles.mascotEmoji}>🧠</Text>
             <Text style={styles.mascotText}>{mascotMessage}</Text>
+          </View>
+
+          {/* PANEL INFERIOR CON PROGRESO DEL DÍA */}
+          <View style={styles.bottomPanel}>
+            <Text style={styles.bottomPanelTitle}>Tu progreso de hoy</Text>
+
+            <View style={styles.bottomPanelRow}>
+              <View style={styles.bottomPanelItem}>
+                <Text style={styles.bottomPanelItemTitle}>Intentos totales</Text>
+                <Text style={styles.bottomPanelItemValue}>{totalSolved}</Text>
+              </View>
+              <View style={styles.bottomPanelItem}>
+                <Text style={styles.bottomPanelItemTitle}>Correctas</Text>
+                <Text style={styles.bottomPanelItemValue}>{correctSolved}</Text>
+              </View>
+            </View>
+
+            <View style={styles.bottomPanelRow}>
+              <View style={styles.bottomPanelItem}>
+                <Text style={styles.bottomPanelItemTitle}>Precisión</Text>
+                <Text style={styles.bottomPanelItemValue}>{accuracy}%</Text>
+              </View>
+              <View style={styles.bottomPanelItem}>
+                <Text style={styles.bottomPanelItemTitle}>Meta sugerida</Text>
+                <Text style={styles.bottomPanelItemValue}>10 ejercicios</Text>
+              </View>
+            </View>
+
+            <Text style={styles.bottomPanelHint}>
+              Cuando llegues a tu meta, ¡desbloquearás actividades nuevas! 🎉
+            </Text>
           </View>
         </>
       ) : (
@@ -318,13 +389,13 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   appTitle: {
-    fontSize: 22,
+    fontSize: 30,
     fontWeight: '800',
     color: COLORS.cream,
   },
   bannerText: {
     marginTop: 4,
-    fontSize: 13,
+    fontSize: 15,
     color: 'rgba(243,235,223,0.8)',
   },
   badge: {
@@ -354,7 +425,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   cardTitle: {
-    fontSize: 14,
+    fontSize: 17,
     color: COLORS.cream,
     marginBottom: 10,
     fontWeight: '600',
@@ -370,6 +441,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 10,
     marginBottom: 14,
+    marginTop: 20,
   },
   operationNumber: {
     fontSize: 32,
@@ -418,7 +490,7 @@ const styles = StyleSheet.create({
   hintButtonText: {
     color: COLORS.navy,
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: 15,
   },
   hintBox: {
     marginTop: 10,
@@ -523,6 +595,49 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     color: COLORS.cream,
+  },
+
+  // PANEL INFERIOR
+  bottomPanel: {
+    marginTop: 20,
+    backgroundColor: '#203a4b',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  bottomPanelTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.cream,
+    marginBottom: 10,
+  },
+  bottomPanelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  bottomPanelItem: {
+    flex: 1,
+    marginHorizontal: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+    backgroundColor: '#1b3444',
+  },
+  bottomPanelItemTitle: {
+    fontSize: 11,
+    color: 'rgba(243,235,223,0.85)',
+  },
+  bottomPanelItemValue: {
+    marginTop: 2,
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.cream,
+  },
+  bottomPanelHint: {
+    marginTop: 10,
+    fontSize: 12,
+    color: 'rgba(243,235,223,0.9)',
   },
 
   loadingText: {

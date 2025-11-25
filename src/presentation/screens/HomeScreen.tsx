@@ -10,9 +10,9 @@ import {
   Pressable,
 } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
-import LinearGradient from 'react-native-linear-gradient';
 import { ScrollView } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
+import LinearGradient from 'react-native-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 
