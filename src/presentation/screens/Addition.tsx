@@ -7,8 +7,10 @@ import {
   ActivityIndicator,
   Alert,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import axios from 'axios';
+import { useNavigation } from '@react-navigation/native';
 
 const API_URL = 'http://10.0.2.2:3000';
 
@@ -29,6 +31,8 @@ type Problem = {
 };
 
 export const Addition = () => {
+  const navigation = useNavigation<any>();
+
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string>('');
   const [problem, setProblem] = useState<Problem | null>(null);
@@ -50,22 +54,13 @@ export const Addition = () => {
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   const applyStateFromBackend = (data: any) => {
-    // Ajusta estos paths según tu backend
     const state = data?.state;
     if (!state) return;
 
-    if (typeof state.level === 'number') {
-      setCurrentLevel(state.level);
-    }
-    if (typeof state.streak === 'number') {
-      setStreak(state.streak);
-    }
-    if (typeof state.correct === 'number') {
-      setCorrectSolved(state.correct);
-    }
-    if (typeof state.total === 'number') {
-      setTotalSolved(state.total);
-    }
+    if (typeof state.level === 'number') setCurrentLevel(state.level);
+    if (typeof state.streak === 'number') setStreak(state.streak);
+    if (typeof state.correct === 'number') setCorrectSolved(state.correct);
+    if (typeof state.total === 'number') setTotalSolved(state.total);
   };
 
   const start = async () => {
@@ -86,7 +81,6 @@ export const Addition = () => {
       if (!sid) throw new Error('No sessionId from server');
       setSessionId(sid);
 
-      // estado inicial (si viene)
       applyStateFromBackend(s.data);
 
       const n = await axios.post(`${API_URL}/session/next`, {
@@ -98,7 +92,6 @@ export const Addition = () => {
       if (!p) throw new Error('No problem from server');
       setProblem(p);
 
-      // estado después de pedir el primer problema
       applyStateFromBackend(n.data);
     } catch (e: any) {
       Alert.alert('Error', String(e?.message || e));
@@ -125,7 +118,6 @@ export const Addition = () => {
       lastGradedProblemId.current = null;
       setShowHint(false);
 
-      // actualizar nivel / stats si cambian
       applyStateFromBackend(n.data);
     } catch (e: any) {
       Alert.alert('Error', String(e?.message || e));
@@ -149,16 +141,12 @@ export const Addition = () => {
       });
       const data = res.data;
 
-      // si el backend ya manda el estado actualizado (nivel, racha, etc.)
       applyStateFromBackend(data);
-
-      // si no usas state.total/state.correct en el backend, mantenemos estos contadores locales
       setTotalSolved(t => t + 1);
 
       if (data.correct) {
         setFeedback(`¡Muy bien! ${data.feedback ?? ''}`);
         setLastCorrect(true);
-        // si no viene en el estado, lo mantenemos local
         setCorrectSolved(c => c + 1);
         setStreak(s => s + 1);
       } else {
@@ -225,7 +213,6 @@ export const Addition = () => {
       <View style={styles.banner}>
         <View>
           <Text style={styles.appTitle}>Sumas</Text>
-          <Text style={styles.bannerText}>Practica sumas de forma divertida ✨</Text>
         </View>
         <View style={styles.badge}>
           <Text style={styles.badgeText}>+ Nivel {currentLevel}</Text>
@@ -367,6 +354,20 @@ export const Addition = () => {
         <Text style={styles.footerIcon}>➕</Text>
         <Text style={styles.footerIcon}>🔢</Text>
         <Text style={styles.footerIcon}>✏️</Text>
+      </View>
+      
+      {/* BOTÓN VOLVER AL INICIO */}
+      <View style={{ marginTop: 28, alignItems: 'center', marginBottom: 60 }}>
+        <TouchableOpacity
+          style={styles.homeButton}
+          onPress={() => navigation.navigate('HomeScreen')}
+        >
+          <Image
+            source={require('../../assets/images/flecha.png')} // cambia la ruta si tu icono está en otro lado
+            style={styles.homeIcon}
+          />
+          <Text style={styles.homeButtonText}>Volver al inicio</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -658,5 +659,33 @@ const styles = StyleSheet.create({
   footerIcon: {
     fontSize: 32,
     color: COLORS.cream,
+  },
+
+  // BOTÓN HOME
+  homeButton: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: COLORS.accent,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
+    elevation: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 24,
+  },
+  homeButtonText: {
+    color: COLORS.navy,
+    fontWeight: '700',
+    fontSize: 15,
+    marginLeft: 8,
+  },
+  homeIcon: {
+    width: 20,
+    height: 20,
+    resizeMode: 'contain',
   },
 });

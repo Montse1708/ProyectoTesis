@@ -42,7 +42,6 @@ type ApiState = {
 
 export const Fractions = () => {
   const navigation = useNavigation<any>();
-
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string>('');
   const [problem, setProblem] = useState<Problem | null>(null);
@@ -386,6 +385,20 @@ export const Fractions = () => {
       ) : (
         <Text style={styles.loadingText}>Cargando problema...</Text>
       )}
+      
+      {/* CONTENEDOR DEL BOTÓN (NO OCUPA TODO EL ANCHO) */}
+      <View style={styles.homeButtonWrapper}>
+        <TouchableOpacity
+          style={styles.homeButton}
+          onPress={() => navigation.navigate('HomeScreen')}
+        >
+          <Image
+            source={require('../../assets/images/flecha.png')}
+            style={styles.homeIcon}
+          />
+          <Text style={styles.homeButtonText}>Volver al inicio</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* BARRA INFERIOR: ICONOS + BOTÓN PARA VOLVER AL INICIO */}
       <View style={styles.bottomBar}>
@@ -394,17 +407,6 @@ export const Fractions = () => {
           <Text style={styles.footerIcon}>½</Text>
           <Text style={styles.footerIcon}>¾</Text>
         </View>
-
-        <TouchableOpacity
-        style={styles.homeButton}
-        onPress={() => navigation.navigate('HomeScreen')}
-      >
-        <Image
-          source={require('../../assets/images/flecha.png')}
-          style={styles.homeIcon}
-        />
-        <Text style={styles.homeButtonText}>Volver al inicio</Text>
-      </TouchableOpacity>
       </View>
     </View>
   );
@@ -689,31 +691,35 @@ const styles = StyleSheet.create({
     fontSize: 28,
     color: COLORS.cream,
   },
+   // BOTÓN HOME
   homeButton: {
-  paddingHorizontal: 18,
-  paddingVertical: 10,
-  borderRadius: 999,
-  backgroundColor: COLORS.accent,
-  shadowColor: '#000',
-  shadowOpacity: 0.25,
-  shadowOffset: { width: 0, height: 4 },
-  shadowRadius: 6,
-  elevation: 4,
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'center',
-},
-
-homeButtonText: {
-  color: COLORS.navy,
-  fontWeight: '700',
-  fontSize: 15,
-  marginLeft: 8,
-},
-
-homeIcon: {
-  width: 20,
-  height: 20,
-  resizeMode: 'contain',
-},
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: COLORS.accent,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
+    elevation: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  homeButtonText: {
+    color: COLORS.navy,
+    fontWeight: '700',
+    fontSize: 15,
+    marginLeft: 8,
+  },
+  homeIcon: {
+    width: 20,
+    height: 20,
+    resizeMode: 'contain',
+  },
+  homeButtonWrapper: {
+  marginTop: 70,
+  marginBottom: 10,  // espacio para que no choque con la barra inferior
+  alignItems: 'center', // centra el botón horizontalmente
+  },
 });

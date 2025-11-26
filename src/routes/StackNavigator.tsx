@@ -20,17 +20,17 @@ export const StackNavigation = () => {
       />
       <Stack.Screen name="HomeScreen" component={MenuNavigation} //options={{ headerShown: false }} 
       />
-      <Stack.Screen name="Addition" component={Addition} //options={{ headerShown: false }} 
+      <Stack.Screen name="Addition" component={Addition} options={{ headerShown: false }} 
       />
-      <Stack.Screen name='Subtraction' component={Subtraction}
+      <Stack.Screen name='Subtraction' component={Subtraction} options={{ headerShown: false }} 
       />
-      <Stack.Screen name='Multiplication' component={Multiplication}
+      <Stack.Screen name='Multiplication' component={Multiplication} options={{ headerShown: false }} 
       />
-      <Stack.Screen name='Division' component={Division}
+      <Stack.Screen name='Division' component={Division} options={{ headerShown: false }} 
       />
       <Stack.Screen name='Fractions' component={Fractions} options={{ headerShown: false }} 
       />
-      <Stack.Screen name='Series' component={Series}
+      <Stack.Screen name='Series' component={Series} options={{ headerShown: false }} 
       />
     </Stack.Navigator>
   );

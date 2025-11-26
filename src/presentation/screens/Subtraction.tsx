@@ -7,9 +7,10 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
-  TouchableOpacity,
+  TouchableOpacity, Image
 } from 'react-native';
 import axios from 'axios';
+import { useNavigation } from '@react-navigation/native';
 
 const API_URL = 'http://10.0.2.2:3000';
 const OP = 'sub'; // Ajusta si tu backend usa otro nombre
@@ -31,6 +32,7 @@ type Problem = {
 };
 
 export const Subtraction = () => {
+  const navigation = useNavigation<any>();
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string>('');
   const [problem, setProblem] = useState<Problem | null>(null);
@@ -375,6 +377,20 @@ export const Subtraction = () => {
         <Text style={styles.loadingText}>Cargando problema...</Text>
       )}
 
+      {/* BOTÓN VOLVER AL INICIO */}
+      <View style={{ marginTop: 28, alignItems: 'center', marginBottom: 60 }}>
+        <TouchableOpacity
+          style={styles.homeButton}
+          onPress={() => navigation.navigate('HomeScreen')}
+        >
+          <Image
+            source={require('../../assets/images/flecha.png')} // cambia la ruta si tu icono está en otro lado
+            style={styles.homeIcon}
+          />
+          <Text style={styles.homeButtonText}>Volver al inicio</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* FOOTER CON ICONOS SUAVES */}
       <View style={styles.footerArt}>
         <Text style={styles.footerIcon}>➖</Text>
@@ -671,5 +687,32 @@ const styles = StyleSheet.create({
   footerIcon: {
     fontSize: 32,
     color: COLORS.cream,
+  },
+  // BOTÓN HOME
+  homeButton: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: COLORS.accent,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
+    elevation: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 24,
+  },
+  homeButtonText: {
+    color: COLORS.navy,
+    fontWeight: '700',
+    fontSize: 15,
+    marginLeft: 8,
+  },
+  homeIcon: {
+    width: 20,
+    height: 20,
+    resizeMode: 'contain',
   },
 });
