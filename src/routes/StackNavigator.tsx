@@ -28,7 +28,7 @@ export const StackNavigation = () => {
       />
       <Stack.Screen name='Division' component={Division}
       />
-      <Stack.Screen name='Fractions' component={Fractions}
+      <Stack.Screen name='Fractions' component={Fractions} options={{ headerShown: false }} 
       />
       <Stack.Screen name='Series' component={Series}
       />

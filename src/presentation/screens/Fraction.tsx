@@ -7,9 +7,10 @@ import {
   ActivityIndicator,
   Alert,
   TouchableOpacity,
-  Platform,
+  Platform, Image
 } from 'react-native';
 import axios from 'axios';
+import { useNavigation } from '@react-navigation/native';
 
 const API_URL = 'http://10.0.2.2:3000';
 const OP = 'frac';
@@ -40,6 +41,8 @@ type ApiState = {
 };
 
 export const Fractions = () => {
+  const navigation = useNavigation<any>();
+
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string>('');
   const [problem, setProblem] = useState<Problem | null>(null);
@@ -262,7 +265,7 @@ export const Fractions = () => {
             </Text>
 
             <Text style={styles.exampleText}>
-              Puedes responder como fracción (`5/4`) o decimal (`1.25`).
+              Puedes responder como fracción (5/4) o decimal (1.25).
             </Text>
 
             {/* INPUT PRINCIPAL */}
@@ -384,11 +387,24 @@ export const Fractions = () => {
         <Text style={styles.loadingText}>Cargando problema...</Text>
       )}
 
-      {/* FOOTER CON ICONOS SUAVES */}
-      <View style={styles.footerArt}>
-        <Text style={styles.footerIcon}>¼</Text>
-        <Text style={styles.footerIcon}>½</Text>
-        <Text style={styles.footerIcon}>¾</Text>
+      {/* BARRA INFERIOR: ICONOS + BOTÓN PARA VOLVER AL INICIO */}
+      <View style={styles.bottomBar}>
+        <View style={styles.footerArt}>
+          <Text style={styles.footerIcon}>¼</Text>
+          <Text style={styles.footerIcon}>½</Text>
+          <Text style={styles.footerIcon}>¾</Text>
+        </View>
+
+        <TouchableOpacity
+        style={styles.homeButton}
+        onPress={() => navigation.navigate('HomeScreen')}
+      >
+        <Image
+          source={require('../../assets/images/flecha.png')}
+          style={styles.homeIcon}
+        />
+        <Text style={styles.homeButtonText}>Volver al inicio</Text>
+      </TouchableOpacity>
       </View>
     </View>
   );
@@ -654,18 +670,50 @@ const styles = StyleSheet.create({
     color: COLORS.cream,
   },
 
-  // FOOTER ICONS
-  footerArt: {
+  // BARRA INFERIOR: ICONOS + BOTÓN INICIO
+  bottomBar: {
     position: 'absolute',
     bottom: 20,
     left: 20,
     right: 20,
+    alignItems: 'center',
+  },
+  footerArt: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    opacity: 0.08,
+    width: '100%',
+    opacity: 0.12,
+    marginBottom: 10,
   },
   footerIcon: {
-    fontSize: 32,
+    fontSize: 28,
     color: COLORS.cream,
   },
+  homeButton: {
+  paddingHorizontal: 18,
+  paddingVertical: 10,
+  borderRadius: 999,
+  backgroundColor: COLORS.accent,
+  shadowColor: '#000',
+  shadowOpacity: 0.25,
+  shadowOffset: { width: 0, height: 4 },
+  shadowRadius: 6,
+  elevation: 4,
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+},
+
+homeButtonText: {
+  color: COLORS.navy,
+  fontWeight: '700',
+  fontSize: 15,
+  marginLeft: 8,
+},
+
+homeIcon: {
+  width: 20,
+  height: 20,
+  resizeMode: 'contain',
+},
 });
