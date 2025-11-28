@@ -1,9 +1,18 @@
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { HomeScreen } from '../presentation/screens/HomeScreen';
+// src/navigation/MenuNavigation.tsx
+import React, { useRef, useEffect } from 'react';
 import { Image, View, Animated, StyleSheet } from 'react-native';
-import React, { useState, useEffect, useRef } from 'react';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+
+import { HomeScreen } from '../presentation/screens/HomeScreen';
+import { Categories } from '../presentation/screens/Categories';
+import { Tutor } from '../presentation/screens/Tutor';
 
 const Tab = createBottomTabNavigator();
+
+const COLORS = {
+  navy: '#253547',
+  accent: '#e8ba61',
+};
 
 export const MenuNavigation = () => {
   return (
@@ -11,88 +20,93 @@ export const MenuNavigation = () => {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarIcon: ({ focused, color, size }) => menuIcons(route, focused),
+        tabBarIcon: ({ focused }) => menuIcons(route, focused),
         tabBarStyle: {
-          marginBottom: 20,
-          borderRadius: 50,
-          backgroundColor: 'rgba(37, 53, 71, 1)',
-          alignSelf: 'center',
-          width: '95%',
+          position: 'absolute',
+          backgroundColor: COLORS.navy,
+          borderRadius: 30,
           height: 70,
+          marginHorizontal: 16,
+          marginBottom: 16,
+          borderTopWidth: 0,
+          elevation: 0,
         },
         tabBarItemStyle: {
-          marginTop: 15,
-        }
+          marginTop: 8,
+        },
       })}
     >
-      <Tab.Screen name="HomeScreen" component={HomeScreen} />
-      <Tab.Screen name="Favorite" component={HomeScreen} />
-      <Tab.Screen name="Car" component={HomeScreen} />
+      <Tab.Screen name="Tutor" component={Tutor} />
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Categories" component={Categories} />
     </Tab.Navigator>
   );
 };
 
 const menuIcons = (route: any, focused: boolean) => {
-  // Usamos useRef para crear las animaciones
-  const scale = useRef(new Animated.Value(1)).current; // Inicializa la escala en 1
-  const translateY = useRef(new Animated.Value(0)).current; // Inicializa el desplazamiento en Y en 0
+  const scale = useRef(new Animated.Value(1)).current;
+  const translateY = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Inicia la animación de escala y desplazamiento cuando la pestaña cambia
     Animated.parallel([
       Animated.timing(scale, {
-        toValue: focused ? 1.2 : 1, // Escala al 1.2 si está enfocado, al 1 si no lo está
-        duration: 200, // Duración de la animación
+        toValue: focused ? 1.2 : 1,
+        duration: 200,
         useNativeDriver: true,
       }),
       Animated.timing(translateY, {
-        toValue: focused ? -20 : 0, // Desplaza hacia arriba cuando está enfocado
-        duration: 200, // Duración de la animación
+        toValue: focused ? -12 : 0,
+        duration: 200,
         useNativeDriver: true,
-      })
+      }),
     ]).start();
-  }, [focused, scale, translateY]); // Añadir dependencias para animaciones
+  }, [focused, scale, translateY]);
 
-  let icon;
-  if (route.name === 'Addition') { // <- quitar espacio inicial
-  icon = focused ? (
-    <Animated.View style={[styles.circleStyle, { transform: [{ scale }, { translateY }] }]}>
-      <Image source={require('../assets/images/menu-active.png')} style={styles.iconStyle} />
-    </Animated.View>
-  ) : (
-    <Image source={require('../assets/images/menu.png')} style={styles.iconStyle} />
+  let iconSource;
+
+  if (route.name === 'HomeScreen') {
+    iconSource = focused
+      ? require('../assets/images/home-active.png')
+      : require('../assets/images/home.png');
+  } else if (route.name === 'Categories') {
+    iconSource = focused
+      ? require('../assets/images/menu-active.png')
+      : require('../assets/images/menu.png');
+  } else {
+    // Tutor
+    iconSource = focused
+      ? require('../assets/images/menu-active.png')
+      : require('../assets/images/menu.png');
+  }
+
+  const icon = (
+    <Image source={iconSource} style={styles.iconStyle} resizeMode="contain" />
   );
-} else if (route.name === 'HomeScreen') {
-  icon = focused ? (
-    <Animated.View style={[styles.circleStyle, { transform: [{ scale }, { translateY }] }]}>
-      <Image source={require('../assets/images/home-active.png')} style={styles.iconStyle} />
+
+  if (!focused) {
+    return <View>{icon}</View>;
+  }
+
+  return (
+    <Animated.View
+      style={[styles.circleStyle, { transform: [{ scale }, { translateY }] }]}
+    >
+      {icon}
     </Animated.View>
-  ) : (
-    <Image source={require('../assets/images/home.png')} style={styles.iconStyle} />
   );
-} else {
-  icon = focused ? (
-    <Animated.View style={[styles.circleStyle, { transform: [{ scale }, { translateY }] }]}>
-      <Image source={require('../assets/images/menu-active.png')} style={styles.iconStyle} />
-    </Animated.View>
-  ) : (
-    <Image source={require('../assets/images/menu.png')} style={styles.iconStyle} />
-  );
-}
-return <View>{icon}</View>; 
 };
 
 const styles = StyleSheet.create({
   circleStyle: {
     width: 50,
     height: 50,
-    borderRadius: 25, // Esto hace que el contenedor sea un círculo
+    borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#e8ba61', // Fondo cuando está activo
+    backgroundColor: '#e8ba61',
   },
   iconStyle: {
-    width: 30,
-    height: 30,
+    width: 26,
+    height: 26,
   },
 });
