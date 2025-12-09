@@ -11,6 +11,7 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
@@ -138,11 +139,31 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ item, onPress }) => {
 
 // ---------- Pantalla de categorías ----------
 export const Categories = () => {
-  const handleCategoryPress = (cat: Category) => {
-    console.log('Category pressed:', cat.id);
-    // navigation.navigate('Tutor', { op: cat.id });
-  };
+  const navigation = useNavigation<any>();
 
+const handleCategoryPress = (cat: Category) => {
+  console.log("Category pressed:", cat.id);
+  switch (cat.id) {
+    case "add":
+      navigation.navigate("Addition");
+      break;
+    case "sub":
+      navigation.navigate("Subtraction");
+      break;
+    case "mul":
+      navigation.navigate("Multiplication");
+      break;
+    case "div":
+      navigation.navigate("Division");
+      break;
+    case "frac":
+      navigation.navigate("Fractions");
+      break;
+    case "seq":
+      navigation.navigate("Series");
+      break;
+  }
+};
   return (
     <View style={styles.container}>
       {/* HEADER FULL WIDTH CON OVERLAY NAVY */}
@@ -151,10 +172,8 @@ export const Categories = () => {
           source={require('../../assets/images/header-math.png')}
           style={styles.heroImage}
         />
-        {/* Capa navy translúcida encima de la imagen */}
         <View style={styles.heroOverlay} />
 
-        {/* Contenido sobre la imagen */}
         <View style={styles.heroContent}>
           <Text style={styles.heroTitle}>Entrenamiento Matemático</Text>
           <Text style={styles.heroSubtitle}>DysMath AI</Text>
@@ -164,8 +183,7 @@ export const Categories = () => {
             pensadas para estudiantes con dificultades en matemáticas.
           </Text>
 
-          <View style={styles.heroMetaRow}>
-          </View>
+          <View style={styles.heroMetaRow} />
         </View>
       </View>
 
@@ -199,7 +217,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.navy,
     borderBottomRightRadius: 20,
     borderBottomLeftRadius: 20,
-    overflow: 'hidden',  
+    overflow: 'hidden',
   },
   heroImage: {
     width: '100%',
@@ -241,21 +259,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  heroBadge: {
-    backgroundColor: COLORS.accent,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
-  heroBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: COLORS.navy,
-  },
-  heroTime: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.85)',
   },
 
   // ----- LISTA -----

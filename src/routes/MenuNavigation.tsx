@@ -17,6 +17,7 @@ const COLORS = {
 export const MenuNavigation = () => {
   return (
     <Tab.Navigator
+      initialRouteName="Home"   // 👈 Home será la primera pantalla que se ve
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: false,
@@ -36,6 +37,7 @@ export const MenuNavigation = () => {
         },
       })}
     >
+      {/* Orden: izquierda, centro, derecha */}
       <Tab.Screen name="Tutor" component={Tutor} />
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Categories" component={Categories} />
@@ -64,7 +66,8 @@ const menuIcons = (route: any, focused: boolean) => {
 
   let iconSource;
 
-  if (route.name === 'HomeScreen') {
+  // 👇 Aquí el nombre correcto del tab: "Home"
+  if (route.name === 'Home') {
     iconSource = focused
       ? require('../assets/images/home-active.png')
       : require('../assets/images/home.png');
@@ -103,7 +106,7 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#e8ba61',
+    backgroundColor: COLORS.accent,
   },
   iconStyle: {
     width: 26,
