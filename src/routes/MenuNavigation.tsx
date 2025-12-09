@@ -78,8 +78,8 @@ const menuIcons = (route: any, focused: boolean) => {
   } else {
     // Tutor
     iconSource = focused
-      ? require('../assets/images/menu-active.png')
-      : require('../assets/images/menu.png');
+      ? require('../assets/images/tutor-active.png')
+      : require('../assets/images/tutor.png');
   }
 
   const icon = (

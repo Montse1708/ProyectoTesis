@@ -123,7 +123,6 @@ const sym = {
   sub: "−",
   mul: "×",
   div: "÷",
-  // para 'frac' y 'seq' el símbolo se elige/omite internamente
 };
 
 const coerceInt = (v, d = 0) => {
@@ -153,8 +152,8 @@ function levelConfig(op, level) {
     sub: [9, 20, 50, 99, 999],
     mul: [5, 10, 12, 20, 50],
     div: [5, 10, 12, 20, 50],
-    frac: [6, 8, 10, 12, 20], // máx denominador fracciones
-    seq: [20, 40, 80, 120, 200], // magnitud de términos/params de series
+    frac: [6, 8, 10, 12, 20],
+    seq: [20, 40, 80, 120, 200],
   };
   const carries = {
     add: [0, 0.2, 0.4, 0.6, 0.8],
@@ -162,7 +161,7 @@ function levelConfig(op, level) {
     mul: [0, 0.15, 0.3, 0.45, 0.6],
     div: [0, 0.15, 0.3, 0.45, 0.6],
     frac: [0, 0.15, 0.3, 0.45, 0.6],
-    seq: [0, 0.1, 0.2, 0.35, 0.5], // más “trucos” conforme sube el nivel
+    seq: [0, 0.1, 0.2, 0.35, 0.5],
   };
   return {
     level: L,
@@ -181,7 +180,6 @@ function computeSolution(op, a, b, { integerDiv = true } = {}) {
       return a * b;
     case "div":
       return integerDiv ? Math.floor(a / b) : a / b;
-    // 'frac' y 'seq' se resuelven en problemFor
     default:
       return a + b;
   }
@@ -244,7 +242,6 @@ function makeOperands(op, { maxNum, wantCarryBorrow }) {
       quotient = Math.max(quotient, Math.floor(maxNum * 0.6));
     return [divisor * quotient, divisor];
   }
-  // para 'frac' y 'seq' no usamos enteros aquí (se arma en problemFor)
   return [
     Math.floor(Math.random() * (maxNum + 1)),
     Math.floor(Math.random() * (maxNum + 1)),
@@ -255,14 +252,11 @@ function problemFor(op, L, locale = "es") {
   const { maxNum, carryBorrowBias } = levelConfig(op, L);
   const want = Math.random() < carryBorrowBias;
 
-  // ----- Series/Secuencias (op: 'seq') -----
+  // ----- Series (seq) -----
   if (op === "seq") {
-    // Elegir tipo de secuencia y tarea
-    const seqType = Math.random() < 0.5 ? "arith" : "geom"; // aritmética o geométrica
-    // Niveles bajos evitan 'sum' para no sobrecargar
+    const seqType = Math.random() < 0.5 ? "arith" : "geom";
     const task = L >= 3 && Math.random() < 0.45 ? "sum" : "next";
 
-    // Parámetros seguros (enteros)
     const a1 = clamp(
       Math.floor(1 + Math.random() * Math.min(9, Math.floor(maxNum / 5))),
       1,
@@ -273,13 +267,10 @@ function problemFor(op, L, locale = "es") {
       1,
       maxNum
     );
-    let r = clamp(Math.floor(2 + Math.random() * 4), 2, 6); // r >=2 para evitar triviales
+    let r = clamp(Math.floor(2 + Math.random() * 4), 2, 6);
     if (seqType === "arith" && d === 0) d = 1;
 
-    // Longitud visible (siempre mostramos 4 o 5 términos)
     const visibleTerms = L >= 3 ? 5 : 4;
-
-    // Construye secuencia para mostrar
     const terms = [];
     if (seqType === "arith") {
       for (let k = 0; k < visibleTerms; k++) terms.push(a1 + k * d);
@@ -287,31 +278,24 @@ function problemFor(op, L, locale = "es") {
       for (let k = 0; k < visibleTerms; k++) terms.push(a1 * Math.pow(r, k));
     }
 
-    // Definir solución según tarea
     let solution;
-    let nForSum = clamp(visibleTerms + (L >= 4 ? 1 : 0), 4, 8); // S_n con n moderado
+    let nForSum = clamp(visibleTerms + (L >= 4 ? 1 : 0), 4, 8);
 
     if (task === "next") {
-      // siguiente término
       solution =
         seqType === "arith"
           ? a1 + visibleTerms * d
           : a1 * Math.pow(r, visibleTerms);
     } else {
-      // suma de los primeros n términos (entera por construcción)
       if (seqType === "arith") {
-        // S_n = n/2 * [2a1 + (n-1)d]
         solution = (nForSum * (2 * a1 + (nForSum - 1) * d)) / 2;
       } else {
-        // S_n = a1 * (r^n - 1) / (r - 1)  | con r entero >= 2
         solution = (a1 * (Math.pow(r, nForSum) - 1)) / (r - 1);
       }
     }
 
-    // Texto de la pregunta
     const seqLabel = locale === "es" ? "Secuencia" : "Sequence";
-    const joiner = ", ";
-    const baseText = `${seqLabel}: ${terms.join(joiner)}`;
+    const baseText = `${seqLabel}: ${terms.join(", ")}`;
     const askNext =
       locale === "es"
         ? "¿Cuál es el siguiente término?"
@@ -355,19 +339,17 @@ function problemFor(op, L, locale = "es") {
       id: nowId("pr"),
       op,
       a: 0,
-      b: 0, // placeholders para compatibilidad
+      b: 0,
       questionText,
       difficulty: pick(diffs),
-      solution, // entero
+      solution,
       steps,
-      // metadatos útiles por si el front los quiere mostrar:
       meta: { seqType, task, a1, d, r, n: nForSum, visibleTerms },
     };
   }
 
-  // ----- Fracciones (op: 'frac') -----
+  // ----- Fracciones (frac) -----
   if (op === "frac") {
-    // elige aleatoriamente qué operación practicar
     const realOp = pick(["fadd", "fsub", "fmul", "fdiv"]);
     const opsSym = { fadd: "+", fsub: "−", fmul: "×", fdiv: "÷" };
 
@@ -382,7 +364,6 @@ function problemFor(op, L, locale = "es") {
     } else if (realOp === "fmul") {
       sol = simplify(A.n * B.n, A.d * B.d);
     } else {
-      // fdiv
       sol = simplify(A.n * B.d, A.d * (B.n || 1));
     }
 
@@ -394,12 +375,12 @@ function problemFor(op, L, locale = "es") {
 
     return {
       id: nowId("pr"),
-      op, // mantenemos 'frac' (no revelamos el subtipo)
+      op,
       a: 0,
-      b: 0, // placeholders para compatibilidad
+      b: 0,
       questionText: qText,
       difficulty: pick(["fácil", "medio", "difícil"]),
-      solution: sol, // {n,d}
+      solution: sol,
       steps: [
         realOp === "fmul"
           ? "Multiplica numeradores y denominadores."
@@ -412,7 +393,7 @@ function problemFor(op, L, locale = "es") {
     };
   }
 
-  // ----- Operaciones enteras (original) -----
+  // ----- Enteras (add, sub, mul, div) -----
   const [a, b] = makeOperands(op, { maxNum, wantCarryBorrow: want });
   const S = sym[op] ?? "+";
   const diffs = ["fácil", "medio", "difícil"];
@@ -432,37 +413,37 @@ function problemFor(op, L, locale = "es") {
     op === "add"
       ? want
         ? [
-            `Suma unidades con llevada.`,
-            `Suma decenas/centenas con llevada.`,
+            "Suma unidades con llevada.",
+            "Suma decenas/centenas con llevada.",
             `Resultado: ${solution}.`,
           ]
         : [
-            `Suma unidades.`,
-            `Suma decenas/centenas.`,
+            "Suma unidades.",
+            "Suma decenas/centenas.",
             `Resultado: ${solution}.`,
           ]
       : op === "sub"
       ? want
         ? [
-            `Si no alcanzan unidades, pide prestado.`,
-            `Resta unidades y decenas.`,
+            "Si no alcanzan unidades, pide prestado.",
+            "Resta unidades y decenas.",
             `Resultado: ${solution}.`,
           ]
         : [
-            `Resta unidades.`,
-            `Resta decenas/centenas.`,
+            "Resta unidades.",
+            "Resta decenas/centenas.",
             `Resultado: ${solution}.`,
           ]
       : op === "mul"
       ? [
-          `Multiplica por columnas.`,
-          `Suma parciales.`,
+          "Multiplica por columnas.",
+          "Suma parciales.",
           `Resultado: ${solution}.`,
         ]
       : op === "div"
       ? [
           `Divide ${a} entre ${b}.`,
-          `Toma cociente entero.`,
+          "Toma cociente entero.",
           `Resultado: ${solution}.`,
         ]
       : [`Resultado: ${solution}.`];
@@ -509,14 +490,13 @@ function sanitizeProblems(obj, count, op, L, locale) {
   const out = obj.problems.map((p) => {
     const opx = isOp(p?.op) ? p.op : op;
 
-    // Soporte 'seq' (si viniera de LLM o fuente externa)
     if (opx === "seq") {
       const qText =
         typeof p?.questionText === "string" && p.questionText.trim()
           ? p.questionText.trim()
           : locale === "es"
-          ? `Completa la secuencia.`
-          : `Complete the sequence.`;
+          ? "Completa la secuencia."
+          : "Complete the sequence.";
       return {
         id: p?.id ?? nowId("p"),
         op: "seq",
@@ -532,9 +512,7 @@ function sanitizeProblems(obj, count, op, L, locale) {
       };
     }
 
-    // Soporte fracciones (incluye 'frac' ya que espera {n,d})
     if (opx === "frac") {
-      // Intentar entender 'solution' desde LLM o inputs externos
       let sol = p?.solution;
       if (typeof sol === "string") {
         const fr = parseUserFraction(sol);
@@ -553,8 +531,8 @@ function sanitizeProblems(obj, count, op, L, locale) {
         typeof p?.questionText === "string" && p.questionText.trim()
           ? p.questionText.trim()
           : locale === "es"
-          ? `Resuelve operación con fracciones.`
-          : `Solve fraction operation.`;
+          ? "Resuelve operación con fracciones."
+          : "Solve fraction operation.";
       return {
         id: p?.id ?? nowId("p"),
         op: "frac",
@@ -569,7 +547,6 @@ function sanitizeProblems(obj, count, op, L, locale) {
       };
     }
 
-    // Numéricas "normales"
     const a = coerceInt(p?.a, 0),
       b = coerceInt(p?.b, 0);
     let A = a,
@@ -639,7 +616,6 @@ async function generateOneProblem(
   locale,
   preferLLM = USE_LLM && llmReady
 ) {
-  // Para 'frac' y 'seq', siempre generamos local (más seguro/consistente)
   if (op === "frac" || op === "seq") return problemFor(op, level, locale);
 
   if (!preferLLM || !text2text) return problemFor(op, level, locale);
@@ -677,7 +653,109 @@ async function fillQueue(sess, locale, target = QUEUE_TARGET, preferLLM = false)
 }
 async function takeFromQueueOrGenerate(sess, locale) {
   if (sess.problemQueue.length > 0) return sess.problemQueue.shift();
-  return await generateOneProblem(sess.op, sess.level, locale, /*preferLLM*/ false);
+  return await generateOneProblem(sess.op, sess.level, locale, false);
+}
+
+// =============== Helper para pasos detallados en /tutor ===============
+function buildTutorSteps(opSymbol, a, b, solution, isEs) {
+  const A = a;
+  const B = b;
+  const R = solution;
+
+  if (opSymbol === "+") {
+    return isEs
+      ? [
+          `1) Identifica los números de la suma: ${A} y ${B}.`,
+          `2) Escríbelos uno debajo del otro, alineando unidades, decenas y centenas.`,
+          `3) Empieza sumando las unidades (la última cifra de cada número). Si la suma es mayor o igual que 10, escribe solo la unidad y "lleva" 1 a la siguiente columna.`,
+          `4) Suma las decenas (y centenas si existen), recordando sumar también cualquier número que hayas llevado.`,
+          `5) Revisa que no te hayas saltado ninguna cifra.`,
+          `6) El resultado de ${A} + ${B} es ${R}.`,
+        ]
+      : [
+          `1) Identify the numbers in the addition: ${A} and ${B}.`,
+          `2) Write them one under the other, aligning ones, tens and hundreds.`,
+          `3) Start by adding the ones. If the sum is 10 or more, write only the ones digit and carry 1 to the next column.`,
+          `4) Add the tens (and hundreds if they exist), including any carried value.`,
+          `5) Check you did not skip any digit.`,
+          `6) The result of ${A} + ${B} is ${R}.`,
+        ];
+  }
+
+  if (opSymbol === "-" || opSymbol === "−") {
+    return isEs
+      ? [
+          `1) Identifica los números de la resta: ${A} (minuendo) y ${B} (sustraendo).`,
+          `2) Escríbelos en forma vertical, uno debajo del otro, alineando unidades, decenas y centenas.`,
+          `3) Comienza restando las unidades. Si la cifra de arriba es menor que la de abajo, pide prestado 1 de la columna de las decenas.`,
+          `4) Después resta las decenas (y centenas si las hay), teniendo en cuenta si pediste prestado.`,
+          `5) Revisa cada columna para asegurarte de que restaste correctamente.`,
+          `6) El resultado de ${A} − ${B} es ${R}.`,
+        ]
+      : [
+          `1) Identify the numbers in the subtraction: ${A} (minuend) and ${B} (subtrahend).`,
+          `2) Write them vertically, aligning ones, tens and hundreds.`,
+          `3) Start subtracting the ones. If the top digit is smaller than the bottom digit, borrow 1 from the tens column.`,
+          `4) Then subtract the tens (and hundreds if any), remembering any borrowed value.`,
+          `5) Check each column to be sure you subtracted correctly.`,
+          `6) The result of ${A} − ${B} is ${R}.`,
+        ];
+  }
+
+  if (opSymbol === "×") {
+    return isEs
+      ? [
+          `1) Identifica los números de la multiplicación: ${A} y ${B}.`,
+          `2) Piensa en ${B} como "cuántas veces" vas a sumar ${A}.`,
+          `3) Si trabajas en vertical, multiplica primero ${A} por la cifra de las unidades de ${B}.`,
+          `4) Si ${B} tiene más cifras, multiplica ${A} por la cifra de las decenas/centenas y escribe ese resultado desplazado una columna hacia la izquierda.`,
+          `5) Suma los resultados parciales para obtener el producto total.`,
+          `6) El resultado de ${A} × ${B} es ${R}.`,
+        ]
+      : [
+          `1) Identify the numbers in the multiplication: ${A} and ${B}.`,
+          `2) Think of ${B} as "how many times" you add ${A}.`,
+          `3) In vertical format, multiply ${A} by the ones digit of ${B} first.`,
+          `4) If ${B} has more digits, multiply ${A} by the tens/hundreds digits and shift each partial product one place to the left.`,
+          `5) Add all partial products to get the final product.`,
+          `6) The result of ${A} × ${B} is ${R}.`,
+        ];
+  }
+
+  if (opSymbol === "÷") {
+    const q = B !== 0 ? A / B : NaN;
+    return isEs
+      ? [
+          `1) Identifica la división: ${A} ÷ ${B}. Aquí ${A} es el dividendo y ${B} es el divisor.`,
+          `2) Pregúntate: ¿cuántas veces cabe ${B} dentro de ${A}?`,
+          `3) Si haces la división larga, empieza viendo cuántas veces cabe ${B} en las primeras cifras de ${A}.`,
+          `4) Escribe el cociente arriba y multiplica ese cociente por ${B}.`,
+          `5) Resta ese resultado al número que tenías y baja la siguiente cifra (si existe) para continuar.`,
+          `6) Repite el proceso hasta que ya no puedas seguir dividiendo.`,
+          `7) El resultado de ${A} ÷ ${B} es ${q}. En esta explicación resumida mostramos el cociente real: ${R}.`,
+        ]
+      : [
+          `1) Identify the division: ${A} ÷ ${B}. Here ${A} is the dividend and ${B} is the divisor.`,
+          `2) Ask yourself: how many times does ${B} fit into ${A}?`,
+          `3) In long division, start by checking how many times ${B} fits into the first digits of ${A}.`,
+          `4) Write the quotient on top and multiply it by ${B}.`,
+          `5) Subtract that product from the current number and bring down the next digit (if any).`,
+          `6) Repeat until you can't continue dividing.`,
+          `7) The result of ${A} ÷ ${B} is ${q}. In this shortened explanation we show the final quotient: ${R}.`,
+        ];
+  }
+
+  return isEs
+    ? [
+        `1) Escribe la operación con los números ${A} y ${B}.`,
+        `2) Aplica la regla de la operación correspondiente.`,
+        `3) El resultado es ${R}.`,
+      ]
+    : [
+        `1) Write the operation with numbers ${A} and ${B}.`,
+        `2) Apply the rule of the corresponding operation.`,
+        `3) The result is ${R}.`,
+      ];
 }
 
 // ================== Endpoint para Tutor.tsx ==================
@@ -686,6 +764,7 @@ app.post("/tutor", (req, res) => {
     console.log("[/tutor] body:", req.body);
 
     const { expression, locale = "es" } = req.body || {};
+    const isEs = locale === "es";
 
     if (!expression || typeof expression !== "string") {
       return res
@@ -693,7 +772,6 @@ app.post("/tutor", (req, res) => {
         .json({ error: "Falta el campo 'expression'." });
     }
 
-    // Normalizar: aceptar 7+8, 7 + 8, 6x7, 6*7, 56/8, etc.
     let expr = expression
       .replace(/,/g, ".")
       .replace(/x/gi, "×")
@@ -709,18 +787,25 @@ app.post("/tutor", (req, res) => {
 
     if (!match) {
       return res.status(400).json({
-        error:
-          "No pude entender la operación. Usa algo como: 7 + 8, 25 - 9, 6 x 7, 56 / 8.",
+        error: isEs
+          ? "No pude entender la operación. Usa algo como: 7 + 8, 25 - 9, 6 x 7, 56 / 8."
+          : "I couldn't understand the operation. Use something like: 7 + 8, 25 - 9, 6 x 7, 56 / 8.",
       });
     }
 
     const a = parseFloat(match[1]);
     const op = match[2];
     const b = parseFloat(match[3]);
-    const isEs = locale === "es";
+
+    if (op === "÷" && b === 0) {
+      return res.status(400).json({
+        error: isEs
+          ? "No se puede dividir entre 0."
+          : "Cannot divide by 0.",
+      });
+    }
 
     let solution;
-    let steps = [];
     let questionText;
 
     switch (op) {
@@ -729,84 +814,31 @@ app.post("/tutor", (req, res) => {
         questionText = isEs
           ? `¿Cuánto es ${a} + ${b}?`
           : `What is ${a} + ${b}?`;
-        steps = isEs
-          ? [
-              `1) Escribe la operación: ${a} + ${b}.`,
-              `2) Suma los números: ${a} + ${b} = ${solution}.`,
-              `3) El resultado final es ${solution}.`,
-            ]
-          : [
-              `1) Write the operation: ${a} + ${b}.`,
-              `2) Add the numbers: ${a} + ${b} = ${solution}.`,
-              `3) Final result is ${solution}.`,
-            ];
         break;
-
       case "-":
       case "−":
         solution = a - b;
         questionText = isEs
           ? `¿Cuánto es ${a} − ${b}?`
           : `What is ${a} − ${b}?`;
-        steps = isEs
-          ? [
-              `1) Escribe la operación: ${a} − ${b}.`,
-              `2) Resta el segundo número al primero: ${a} − ${b} = ${solution}.`,
-              `3) El resultado final es ${solution}.`,
-            ]
-          : [
-              `1) Write the operation: ${a} − ${b}.`,
-              `2) Subtract second from first: ${a} − ${b} = ${solution}.`,
-              `3) Final result is ${solution}.`,
-            ];
         break;
-
       case "×":
         solution = a * b;
         questionText = isEs
           ? `¿Cuánto es ${a} × ${b}?`
           : `What is ${a} × ${b}?`;
-        steps = isEs
-          ? [
-              `1) Escribe la operación: ${a} × ${b}.`,
-              `2) Multiplica los números: ${a} × ${b} = ${solution}.`,
-              `3) El resultado final es ${solution}.`,
-            ]
-          : [
-              `1) Write the operation: ${a} × ${b}.`,
-              `2) Multiply the numbers: ${a} × ${b} = ${solution}.`,
-              `3) Final result is ${solution}.`,
-            ];
         break;
-
       case "÷":
-        if (b === 0) {
-          return res.status(400).json({
-            error: isEs
-              ? "No se puede dividir entre 0."
-              : "Cannot divide by 0.",
-          });
-        }
         solution = a / b;
         questionText = isEs
           ? `¿Cuánto es ${a} ÷ ${b}?`
           : `What is ${a} ÷ ${b}?`;
-        steps = isEs
-          ? [
-              `1) Escribe la operación: ${a} ÷ ${b}.`,
-              `2) Divide el primer número entre el segundo: ${a} ÷ ${b} = ${solution}.`,
-              `3) El resultado final es ${solution}.`,
-            ]
-          : [
-              `1) Write the operation: ${a} ÷ ${b}.`,
-              `2) Divide the first number by the second: ${a} ÷ ${b} = ${solution}.`,
-              `3) Final result is ${solution}.`,
-            ];
         break;
-
       default:
         return res.status(400).json({ error: "Operador no soportado." });
     }
+
+    const steps = buildTutorSteps(op, a, b, solution, isEs);
 
     console.log("[/tutor] OK →", { questionText, solution });
 
@@ -819,9 +851,7 @@ app.post("/tutor", (req, res) => {
   }
 });
 
-// ================== Endpoints ==================
-
-// Crear sesión
+// ================== Endpoints adaptativos ==================
 app.post("/session/start", (req, res) => {
   const op = isOp(req.body?.op) ? req.body.op : "add";
   const id = nowId("sess");
@@ -830,13 +860,12 @@ app.post("/session/start", (req, res) => {
 
   const locale = String(req.body?.locale || "es");
   setImmediate(() =>
-    fillQueue(state, locale, QUEUE_TARGET, /*preferLLM*/ false).catch(() => {})
+    fillQueue(state, locale, QUEUE_TARGET, false).catch(() => {})
   );
 
   res.json({ sessionId: id, state });
 });
 
-// Siguiente problema (instantáneo con prefetched/cola)
 app.post("/session/next", async (req, res) => {
   const sessionId = String(req.body?.sessionId || "");
   const locale = String(req.body?.locale || "es");
@@ -882,7 +911,6 @@ app.post("/session/next", async (req, res) => {
   });
 });
 
-// Calificar + prefetch inmediato del siguiente
 app.post("/session/grade", async (req, res) => {
   const sessionId = String(req.body?.sessionId || "");
   const userAnswerRaw = req.body?.userAnswer;
@@ -895,7 +923,6 @@ app.post("/session/grade", async (req, res) => {
 
   const { op, a, b, solution } = sess.lastProblem;
 
-  // ¿Es fracción? (op frac o solution con {n,d})
   const isFraction =
     op === "frac" ||
     (solution &&
@@ -905,7 +932,7 @@ app.post("/session/grade", async (req, res) => {
 
   let correct = false;
   if (isFraction) {
-    const expected = solution; // {n,d}
+    const expected = solution;
     const got = parseUserFraction(userAnswerRaw);
     correct = !!(expected && got && equalFrac(expected, got));
   } else {
@@ -955,8 +982,7 @@ app.post("/session/grade", async (req, res) => {
     ? locale === "es"
       ? "Usa m.c.m. o extremos y medios; simplifica."
       : "Find common denominator or multiply across; simplify."
-    : // seq
-      locale === "es"
+    : locale === "es"
     ? "Identifica diferencia o razón; aplica la fórmula correspondiente."
     : "Identify common difference or ratio; apply the right formula.";
 
@@ -982,14 +1008,12 @@ app.post("/session/grade", async (req, res) => {
   });
 });
 
-// Generar lote (rápido; usa LLM solo si está listo y activado)
 app.post("/generate", async (req, res) => {
   const op = isOp(req.body?.op) ? req.body.op : "add";
   const count = clamp(coerceInt(req.body?.count ?? 10, 10), 1, 200);
   const locale = String(req.body?.locale || "es");
   const level = clamp(coerceInt(req.body?.level ?? 1, 1), 1, 5);
 
-  // Para 'frac' y 'seq', generamos local sí o sí:
   if (op === "frac" || op === "seq") {
     const out = [];
     for (let i = 0; i < count; i++) out.push(problemFor(op, level, locale));
@@ -1006,13 +1030,11 @@ app.post("/generate", async (req, res) => {
   res.json({ problems: out });
 });
 
-// Alias compatibilidad (no adaptativo)
 app.post("/grade", (req, res) => {
   const { op: opIn, a, b, userAnswer, locale = "es" } = req.body || {};
   const op = isOp(opIn) ? opIn : "add";
 
   if (op === "frac") {
-    // Alias no conoce el problema real; solo ilustra validación de una respuesta tipo
     const example = problemFor("frac", 1, locale);
     const got = parseUserFraction(userAnswer);
     const correct = example && got && equalFrac(example.solution, got);
@@ -1033,7 +1055,6 @@ app.post("/grade", (req, res) => {
   }
 
   if (op === "seq") {
-    // Alias simple: genera un ejemplo y evalúa contra él (no adaptativo)
     const ex = problemFor("seq", 1, locale);
     const UA = coerceInt(userAnswer);
     const correct = UA === ex.solution;
