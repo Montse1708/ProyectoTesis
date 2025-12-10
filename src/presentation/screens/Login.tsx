@@ -81,7 +81,7 @@ export const Login = () => {
           { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
         ]}
       >
-        <Text style={styles.welcome}>Bienvenido</Text>
+        <Text style={styles.welcome}>Iniciar Sesión</Text>
 
         {/* USERNAME */}
         <View style={styles.inputWrapper}>
@@ -138,7 +138,7 @@ export const Login = () => {
             end={{ x: 1, y: 1 }}
             style={styles.loginButton}
           >
-            <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
+            <Text style={styles.loginButtonText}>Entrar</Text>
           </LinearGradient>
         </Pressable>
 
