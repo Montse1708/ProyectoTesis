@@ -12,7 +12,7 @@ app.use(express.json());
 // ================== Config ==================
 const envBool = (v) =>
   typeof v === "string" && /^(1|true|t|yes|y|on)$/i.test(v.trim());
-const USE_LLM = envBool(process.env.USE_LLM); // Off por defecto (velocidad)
+const USE_LLM = true; 
 const QUEUE_TARGET = Number(process.env.QUEUE_TARGET ?? 3); // Problemas precargados por sesión
 
 console.log(
