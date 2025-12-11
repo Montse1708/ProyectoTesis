@@ -211,8 +211,8 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   logoCircle: {
-    width: 200,
-    height: 200,
+    width: 220,
+    height: 220,
     borderRadius: 35,
     backgroundColor: 'rgba(255,255,255,0.18)',
     justifyContent: 'center',
@@ -220,13 +220,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   logoImage: {
-    width: 200,
-    height: 200,
+    width: 250,
+    height: 250,
     resizeMode: 'contain',
   },
   logoTitle: {
     color: COLORS.white,
-    fontSize: 30,
+    fontSize: 40,
     fontWeight: '700',
     letterSpacing: 1,
   },
